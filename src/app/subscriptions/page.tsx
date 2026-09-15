@@ -263,7 +263,10 @@ export default function SubscriptionsPage() {
   }
 
   useEffect(() => {
+    // Async data loading intentionally updates UI state after the external request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSubscriptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function resetForm() {
@@ -280,7 +283,7 @@ export default function SubscriptionsPage() {
     if (hasReachedSubscriptionLimit) {
       setMessage("");
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -306,7 +309,7 @@ export default function SubscriptionsPage() {
 
     if (hasReachedSubscriptionLimit) {
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -390,7 +393,7 @@ export default function SubscriptionsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
+          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
         );
       } else {
         setErrorMessage(error.message);
@@ -865,7 +868,7 @@ export default function SubscriptionsPage() {
           {hasReachedSubscriptionLimit && (
             <div className="mt-4 rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3">
               <p className="text-sm font-semibold text-[#214F43]">
-                You've reached your Free plan limit.
+                You&apos;ve reached your Free plan limit.
               </p>
 
               <p className="mt-1 text-xs text-[#7B9685]">
@@ -987,7 +990,7 @@ export default function SubscriptionsPage() {
                 <p className="text-lg font-semibold">Add a subscription</p>
 
                 <p className="mt-1 text-sm text-[#7B9685]">
-                  Track a recurring expense so you always know what's coming
+                  Track a recurring expense so you always know what&apos;s coming
                   next.
                 </p>
               </div>
@@ -1092,7 +1095,7 @@ export default function SubscriptionsPage() {
                   />
 
                   <p className="mt-2 text-xs text-[#7B9685]">
-                    We'll highlight the closest payment for you.
+                    We&apos;ll highlight the closest payment for you.
                   </p>
                 </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   LineChart,
@@ -14,6 +14,12 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
 import { useCurrency } from "@/hooks/useCurrency";
+import {
+  PremiumBadge,
+  PremiumLock,
+  PremiumModal,
+} from "@/components/Premium";
+import { isPremium as checkPremium } from "@/lib/premium";
 
 type RecentTransaction = {
   id: string;
@@ -147,6 +153,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [plan, setPlan] = useState<"free" | "premium">("free");
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const {
     format: formatCurrency,
@@ -463,7 +471,7 @@ export default function DashboardPage() {
       ] = await Promise.all([
         supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, plan")
           .eq("id", user.id)
           .single(),
 
@@ -546,6 +554,12 @@ export default function DashboardPage() {
       if (profileResult.data?.full_name) {
         setName(profileResult.data.full_name);
       }
+
+      setPlan(
+        profileResult.data?.plan === "premium"
+          ? "premium"
+          : "free"
+      );
 
       const loadedCategories: Category[] = (
         categoriesResult.data ?? []
@@ -991,7 +1005,7 @@ export default function DashboardPage() {
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F5F2E8]">
         <div className="absolute h-64 w-64 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
 
-        <div className="relative rounded-[1.75rem] border border-white/70 bg-white/60 px-8 py-6 shadow-[0_20px_50px_rgba(23,60,52,0.08)] backdrop-blur-xl">
+        <div className="relative rounded-[1.75rem] border border-white/70 bg-white/60 px-8 py-6 shadow-[0_20px_50px_rgba(23,60,52,0.08)] backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="h-3 w-3 animate-pulse rounded-full bg-[#214F43]" />
 
@@ -1190,6 +1204,8 @@ export default function DashboardPage() {
 
   const visibleActions = actionItems.slice(0, 3);
 
+  const isPremium = checkPremium(plan);
+
   const topSpendingCategory = categorySpending[0] ?? null;
   const spendingCategoryCount = categorySpending.length;
 
@@ -1227,7 +1243,7 @@ export default function DashboardPage() {
         >
           <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-3xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 backdrop-blur-lg">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 backdrop-blur-sm">
                 <span className="h-2 w-2 rounded-full bg-[#C8D8BE]" />
                 Your financial overview
               </div>
@@ -1252,7 +1268,7 @@ export default function DashboardPage() {
                   onClick={() =>
                     router.push("/transactions")
                   }
-                  className="group relative overflow-hidden rounded-full border border-white/30 bg-[#214F43]/90 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.14)] backdrop-blur-lg transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#173C34]"
+                  className="group relative overflow-hidden rounded-full border border-white/30 bg-[#214F43]/90 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.14)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#173C34]"
                 >
                   <span className="relative flex items-center justify-center gap-2">
                     + Add Transaction
@@ -1265,7 +1281,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/reports")}
-                  className="rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-lg transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/20"
+                  className="rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/20"
                 >
                   View Reports
                 </button>
@@ -1274,7 +1290,7 @@ export default function DashboardPage() {
 
             {/* BALANCE */}
             <div className="w-full max-w-sm lg:w-80">
-              <div className="rounded-[2rem] border border-white/30 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+              <div className="rounded-[2rem] border border-white/30 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.16)] backdrop-blur-md">
                 <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-6">
                   <div className="flex items-start justify-between">
                     <div>
@@ -1411,101 +1427,10 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-8 h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlyData}
-                    margin={{
-                      top: 10,
-                      right: 10,
-                      left: -15,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#DDE6D7"
-                      vertical={false}
-                    />
-
-                    <XAxis
-                      dataKey="month"
-                      tick={{
-                        fill: "#7B9685",
-                        fontSize: 11,
-                      }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-
-                    <YAxis
-                      tick={{
-                        fill: "#7B9685",
-                        fontSize: 10,
-                      }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(value) =>
-                        value >= 1000000
-                          ? `${(
-                              value / 1000000
-                            ).toFixed(1)}M`
-                          : value >= 1000
-                          ? `${(
-                              value / 1000
-                            ).toFixed(0)}K`
-                          : `${value}`
-                      }
-                    />
-
-                    <Tooltip
-                      formatter={(value, name) => [
-                        formatCurrency(Number(value)),
-                        String(name),
-                      ]}
-                      contentStyle={{
-                        borderRadius: "16px",
-                        border: "1px solid #DDE6D7",
-                        backgroundColor:
-                          "rgba(249,248,242,0.97)",
-                        boxShadow:
-                          "0 12px 30px rgba(23,60,52,0.10)",
-                      }}
-                      labelStyle={{
-                        color: "#173C34",
-                        fontWeight: 600,
-                        marginBottom: "5px",
-                      }}
-                    />
-
-                    <Line
-                      type="monotone"
-                      dataKey="income"
-                      name="Income"
-                      stroke="#214F43"
-                      strokeWidth={2.5}
-                      dot={{
-                        r: 3,
-                        fill: "#214F43",
-                        strokeWidth: 0,
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
-
-                    <Line
-                      type="monotone"
-                      dataKey="expenses"
-                      name="Expenses"
-                      stroke="#9A6256"
-                      strokeWidth={2.5}
-                      dot={{
-                        r: 3,
-                        fill: "#9A6256",
-                        strokeWidth: 0,
-                      }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <DashboardCashFlowChart
+                  data={monthlyData}
+                  formatCurrency={formatCurrency}
+                />
               </div>
             </GlassPanel>
 
@@ -2370,6 +2295,119 @@ export default function DashboardPage() {
             </GlassPanel>
           </div>
 
+          {/* PREMIUM PREVIEW */}
+          <div className="mt-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#7B9685]">
+                  Premium intelligence
+                </p>
+
+                <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                  Go beyond the overview.
+                </h3>
+
+                <p className="mt-1 max-w-xl text-sm leading-6 text-[#7B9685]">
+                  Deeper trends and financial signals built around your data.
+                </p>
+              </div>
+
+              {isPremium && <PremiumBadge />}
+            </div>
+
+            <div className="mt-5">
+              {isPremium ? (
+                <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+                  <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/55 p-6 shadow-[0_20px_55px_rgba(23,60,52,0.05)] backdrop-blur-sm md:p-7">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
+                          Financial momentum
+                        </p>
+
+                        <h4 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#173C34]">
+                          Your money is moving.
+                        </h4>
+
+                        <p className="mt-2 max-w-lg text-sm leading-6 text-[#7B9685]">
+                          Use Reports to explore longer-term trends, compare months, and understand the patterns behind your current numbers.
+                        </p>
+                      </div>
+
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8EEDB] text-[#214F43]">
+                        ✦
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                      <PremiumMiniMetric
+                        label="Savings rate"
+                        value={`${savingsRate.toFixed(1)}%`}
+                      />
+                      <PremiumMiniMetric
+                        label="Categories"
+                        value={String(spendingCategoryCount)}
+                      />
+                      <PremiumMiniMetric
+                        label="Monthly net"
+                        value={formatCurrency(currentSavings)}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push("/reports")}
+                      className="group mt-6 flex w-full items-center justify-between rounded-2xl border border-[#DDE6D7] bg-white/60 px-5 py-4 text-sm font-semibold text-[#214F43] transition-[transform,background-color] duration-200 hover:-translate-y-0.5 hover:bg-white"
+                    >
+                      Open Premium Reports
+                      <span className="transition-transform group-hover:translate-x-1">
+                        →
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-[2rem] bg-[#214F43] p-7 text-white shadow-[0_25px_70px_rgba(33,79,67,0.12)]">
+                    <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
+
+                    <div className="relative">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/45">
+                        Premium focus
+                      </p>
+
+                      <h4 className="mt-4 text-2xl font-semibold tracking-[-0.03em]">
+                        Keep the bigger picture in view.
+                      </h4>
+
+                      <p className="mt-3 text-sm leading-6 text-white/60">
+                        Your Premium reports turn the activity on this dashboard into deeper financial context.
+                      </p>
+
+                      <div className="mt-7 rounded-2xl border border-white/10 bg-white/10 p-5">
+                        <p className="text-[9px] uppercase tracking-[0.16em] text-white/40">
+                          Current position
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-[#C8D8BE]">
+                          {formatCurrency(currentSavings)}
+                        </p>
+
+                        <p className="mt-1 text-xs text-white/45">
+                          Net savings this month
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <PremiumLock
+                  title="Unlock deeper financial intelligence."
+                  description="See long-term trends, monthly comparisons, financial health signals, and complete spending analysis in Ordiva Premium."
+                  onUpgrade={() => setUpgradeOpen(true)}
+                />
+              )}
+            </div>
+          </div>
+
           {/* RECENT TRANSACTIONS */}
           <div className="mt-6">
             <GlassPanel className="p-5 md:p-7">
@@ -2510,7 +2548,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => router.push("/reports")}
-                className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-lg transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/20"
+                className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/20"
               >
                 Open Reports
                 <span className="ml-2 inline-block transition-transform duration-200 group-hover:translate-x-1">
@@ -2549,6 +2587,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <PremiumModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+      />
     </main>
   );
 }
@@ -2556,6 +2599,127 @@ export default function DashboardPage() {
 /* =========================================================
    UI COMPONENTS
 ========================================================= */
+
+const DashboardCashFlowChart = memo(function DashboardCashFlowChart({
+  data,
+  formatCurrency,
+}: {
+  data: MonthlyData[];
+  formatCurrency: (amount: number) => string;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height="100%" debounce={120}>
+      <LineChart
+        data={data}
+        margin={{
+          top: 10,
+          right: 10,
+          left: -15,
+          bottom: 5,
+        }}
+      >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="#DDE6D7"
+          vertical={false}
+        />
+
+        <XAxis
+          dataKey="month"
+          tick={{
+            fill: "#7B9685",
+            fontSize: 11,
+          }}
+          axisLine={false}
+          tickLine={false}
+        />
+
+        <YAxis
+          tick={{
+            fill: "#7B9685",
+            fontSize: 10,
+          }}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(value) =>
+            value >= 1000000
+              ? `${(value / 1000000).toFixed(1)}M`
+              : value >= 1000
+              ? `${(value / 1000).toFixed(0)}K`
+              : `${value}`
+          }
+        />
+
+        <Tooltip
+          formatter={(value, name) => [
+            formatCurrency(Number(value)),
+            String(name),
+          ]}
+          contentStyle={{
+            borderRadius: "16px",
+            border: "1px solid #DDE6D7",
+            backgroundColor: "rgba(249,248,242,0.97)",
+            boxShadow: "0 12px 30px rgba(23,60,52,0.10)",
+          }}
+          labelStyle={{
+            color: "#173C34",
+            fontWeight: 600,
+            marginBottom: "5px",
+          }}
+        />
+
+        <Line
+          type="monotone"
+          dataKey="income"
+          name="Income"
+          stroke="#214F43"
+          strokeWidth={2.5}
+          dot={{
+            r: 3,
+            fill: "#214F43",
+            strokeWidth: 0,
+          }}
+          activeDot={{ r: 5 }}
+        />
+
+        <Line
+          type="monotone"
+          dataKey="expenses"
+          name="Expenses"
+          stroke="#9A6256"
+          strokeWidth={2.5}
+          dot={{
+            r: 3,
+            fill: "#9A6256",
+            strokeWidth: 0,
+          }}
+          activeDot={{ r: 5 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+});
+
+
+
+const PremiumMiniMetric = memo(function PremiumMiniMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2]/75 p-4">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7B9685]">
+        {label}
+      </p>
+      <p className="mt-2 truncate text-sm font-bold text-[#214F43]">
+        {value}
+      </p>
+    </div>
+  );
+});
 
 function GlassPanel({
   children,
@@ -2571,7 +2735,7 @@ function GlassPanel({
       className={`relative ${
         green
           ? "overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] shadow-[0_20px_50px_rgba(33,79,67,0.12)]"
-          : "rounded-[2rem] border border-[#DDE6D7] bg-white/40 shadow-[0_12px_35px_rgba(23,60,52,0.045)] backdrop-blur-sm"
+          : "rounded-[2rem] border border-[#DDE6D7] bg-white/40 shadow-[0_12px_35px_rgba(23,60,52,0.045)]"
       } ${className}`}
     >
       {children}
@@ -2579,7 +2743,7 @@ function GlassPanel({
   );
 }
 
-function HeroStat({
+const HeroStat = memo(function HeroStat({
   label,
   value,
   icon,
@@ -2598,7 +2762,7 @@ function HeroStat({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_14px_35px_rgba(0,0,0,0.10)] backdrop-blur-lg transition-transform duration-200 hover:-translate-y-0.5 ${
+      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_14px_35px_rgba(0,0,0,0.10)] transition-transform duration-200 hover:-translate-y-0.5 ${
         highlight
           ? "border-[#C8D8BE]/30 bg-[#AFC1A4]/15"
           : "border-white/20 bg-white/10"
@@ -2655,9 +2819,9 @@ function HeroStat({
       </div>
     </div>
   );
-}
+});
 
-function ChartLegend({
+const ChartLegend = memo(function ChartLegend({
   color,
   label,
 }: {
@@ -2672,9 +2836,9 @@ function ChartLegend({
       {label}
     </div>
   );
-}
+});
 
-function MetricCard({
+const MetricCard = memo(function MetricCard({
   label,
   value,
   danger = false,
@@ -2698,9 +2862,9 @@ function MetricCard({
       </p>
     </div>
   );
-}
+});
 
-function DarkMetric({
+const DarkMetric = memo(function DarkMetric({
   label,
   value,
 }: {
@@ -2718,7 +2882,7 @@ function DarkMetric({
       </p>
     </div>
   );
-}
+});
 
 function EmptyState({
   icon,
@@ -2758,4 +2922,4 @@ function EmptyState({
       </div>
     </div>
   );
-}
+} 

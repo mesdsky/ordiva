@@ -63,28 +63,41 @@ export default function Navigation() {
   const [profileMenuOpen, setProfileMenuOpen] =
     useState(false);
 
+  const [pageMenuOpen, setPageMenuOpen] =
+    useState(false);
+
   const [isLoggingOut, setIsLoggingOut] =
     useState(false);
 
   const profileMenuRef =
     useRef<HTMLDivElement>(null);
 
+  const pageMenuRef =
+    useRef<HTMLDivElement>(null);
+
   /*
-   * Close profile menu when clicking outside
+   * Close open menus when clicking outside
    */
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
       if (
         profileMenuRef.current &&
-        !profileMenuRef.current.contains(
-          event.target as Node
-        )
+        !profileMenuRef.current.contains(target)
       ) {
         setProfileMenuOpen(false);
       }
+
+      if (
+        pageMenuRef.current &&
+        !pageMenuRef.current.contains(target)
+      ) {
+        setPageMenuOpen(false);
+      }
     }
 
-    if (profileMenuOpen) {
+    if (profileMenuOpen || pageMenuOpen) {
       document.addEventListener(
         "mousedown",
         handleClickOutside
@@ -97,19 +110,20 @@ export default function Navigation() {
         handleClickOutside
       );
     };
-  }, [profileMenuOpen]);
+  }, [profileMenuOpen, pageMenuOpen]);
 
   /*
-   * Close profile menu with Escape
+   * Close open menus with Escape
    */
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
+        setPageMenuOpen(false);
       }
     }
 
-    if (profileMenuOpen) {
+    if (profileMenuOpen || pageMenuOpen) {
       document.addEventListener(
         "keydown",
         handleEscape
@@ -122,11 +136,12 @@ export default function Navigation() {
         handleEscape
       );
     };
-  }, [profileMenuOpen]);
+  }, [profileMenuOpen, pageMenuOpen]);
 
   function navigateTo(href: string) {
     if (href === pathname) {
       setProfileMenuOpen(false);
+      setPageMenuOpen(false);
       return;
     }
 
@@ -134,10 +149,12 @@ export default function Navigation() {
       setPendingHref(href);
       setShowUnsavedModal(true);
       setProfileMenuOpen(false);
+      setPageMenuOpen(false);
       return;
     }
 
     setProfileMenuOpen(false);
+    setPageMenuOpen(false);
     router.push(href);
   }
 
@@ -192,7 +209,7 @@ export default function Navigation() {
       {/* Fixed floating navigation */}
       <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-3 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative flex min-h-[68px] items-center justify-between gap-3 overflow-visible rounded-[1.5rem] border border-white/70 bg-[#F5F2E8]/75 px-3 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl md:px-5">
+          <div className="relative flex min-h-[68px] items-center justify-between gap-3 overflow-visible rounded-[1.5rem] border border-white/70 bg-[#F5F2E8]/75 px-3 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md md:px-5">
 
             {/* Glass highlight */}
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/90" />
@@ -243,7 +260,7 @@ export default function Navigation() {
                     }
                     className={`relative rounded-xl px-3 py-2 text-sm font-medium transition-all duration-300 ${
                       isActive
-                        ? "bg-white/65 text-[#214F43] shadow-[inset_0_1px_0_white,0_4px_15px_rgba(33,79,67,0.06)] backdrop-blur-xl"
+                        ? "bg-white/65 text-[#214F43] shadow-[inset_0_1px_0_white,0_4px_15px_rgba(33,79,67,0.06)]"
                         : "text-[#5F7168] hover:bg-white/45 hover:text-[#214F43]"
                     }`}
                   >
@@ -257,71 +274,94 @@ export default function Navigation() {
               })}
             </nav>
 
-            {/* Tablet navigation */}
-            <nav className="relative z-10 hidden max-w-[58vw] items-center gap-1 overflow-x-auto [scrollbar-width:none] lg:flex xl:hidden">
-              {navigationItems.map((item) => {
-                const isActive =
-                  pathname === item.href;
-
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() =>
-                      navigateTo(item.href)
-                    }
-                    className={`shrink-0 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                      isActive
-                        ? "bg-white/65 text-[#214F43] shadow-sm"
-                        : "text-[#5F7168] hover:bg-white/45 hover:text-[#214F43]"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Mobile navigation */}
-            <nav className="relative z-10 flex max-w-[58vw] items-center gap-1 overflow-x-auto [scrollbar-width:none] lg:hidden">
-              {navigationItems
-                .slice(0, 4)
-                .map((item) => {
-                  const isActive =
-                    pathname === item.href;
-
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() =>
-                        navigateTo(item.href)
-                      }
-                      className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                        isActive
-                          ? "bg-white/70 text-[#214F43] shadow-sm"
-                          : "text-[#5F7168] hover:bg-white/45"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-
+            {/* Mobile + tablet page menu */}
+            <div
+              ref={pageMenuRef}
+              className="relative z-[60] ml-auto xl:hidden"
+            >
               <button
                 type="button"
-                onClick={() =>
-                  navigateTo("/reports")
-                }
-                className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                  pathname === "/reports"
-                    ? "bg-white/70 text-[#214F43] shadow-sm"
-                    : "text-[#5F7168] hover:bg-white/45"
+                onClick={() => {
+                  setPageMenuOpen((current) => !current);
+                  setProfileMenuOpen(false);
+                }}
+                className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                  pageMenuOpen
+                    ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
+                    : "border-white/80 bg-white/55 text-[#5F7168] shadow-[0_4px_15px_rgba(33,79,67,0.05)] hover:bg-white/80 hover:text-[#214F43]"
                 }`}
+                aria-label="Open page navigation"
+                aria-expanded={pageMenuOpen}
+                aria-haspopup="menu"
+                title="Page navigation"
               >
-                Reports
+                <span className="relative flex h-4 w-5 flex-col justify-between">
+                  <span
+                    className={`h-0.5 w-5 origin-center rounded-full bg-current transition-transform duration-200 ${
+                      pageMenuOpen ? "translate-y-[7px] rotate-45" : ""
+                    }`}
+                  />
+                  <span
+                    className={`h-0.5 w-5 rounded-full bg-current transition-opacity duration-200 ${
+                      pageMenuOpen ? "opacity-0" : ""
+                    }`}
+                  />
+                  <span
+                    className={`h-0.5 w-5 origin-center rounded-full bg-current transition-transform duration-200 ${
+                      pageMenuOpen ? "-translate-y-[7px] -rotate-45" : ""
+                    }`}
+                  />
+                </span>
               </button>
-            </nav>
+
+              {pageMenuOpen && (
+                <div
+                  role="menu"
+                  aria-label="Page navigation"
+                  className="absolute right-0 top-[calc(100%+12px)] w-[230px] origin-top-right rounded-[1.25rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-md"
+                >
+                  <p className="px-3 pb-2 pt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7B9685]">
+                    Navigate to
+                  </p>
+
+                  {navigationItems.map((item) => {
+                    const isActive = pathname === item.href;
+
+                    if (!item.active) {
+                      return (
+                        <span
+                          key={item.label}
+                          role="menuitem"
+                          aria-disabled="true"
+                          className="block rounded-xl px-3 py-3 text-sm font-medium text-[#A5B2AA]"
+                        >
+                          {item.label}
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={item.label}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => navigateTo(item.href)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                          isActive
+                            ? "bg-[#E8EEDB] text-[#214F43]"
+                            : "text-[#5F7168] hover:bg-[#E8EEDB]/70 hover:text-[#214F43]"
+                        }`}
+                      >
+                        {item.label}
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#214F43]" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Profile menu */}
             <div
@@ -331,11 +371,12 @@ export default function Navigation() {
               {/* Profile icon */}
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   setProfileMenuOpen(
                     (current) => !current
-                  )
-                }
+                  );
+                  setPageMenuOpen(false);
+                }}
                 className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
                   profileMenuOpen
                     ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
@@ -368,7 +409,7 @@ export default function Navigation() {
                 <div
                   role="menu"
                   aria-label="Account menu"
-                  className="absolute right-0 top-[calc(100%+12px)] w-[220px] origin-top-right rounded-[1.25rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-2xl"
+                  className="absolute right-0 top-[calc(100%+12px)] w-[220px] origin-top-right rounded-[1.25rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-md"
                 >
                   {/* Profile */}
                   <button
@@ -413,7 +454,7 @@ export default function Navigation() {
                     type="button"
                     role="menuitem"
                     onClick={() =>
-                      navigateTo("/profile")
+                      navigateTo("/settings")
                     }
                     className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#E8EEDB]/70"
                   >
@@ -448,6 +489,50 @@ export default function Navigation() {
 
                       <span className="mt-0.5 block text-xs text-[#7A8A82]">
                         Preferences
+                      </span>
+                    </span>
+                  </button>
+
+                  {/* Billing */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() =>
+                      navigateTo("/billing")
+                    }
+                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#E8EEDB]/70"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E8EEDB] text-[#214F43]">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-[18px] w-[18px]"
+                        aria-hidden="true"
+                      >
+                        <rect
+                          x="3"
+                          y="5"
+                          width="18"
+                          height="14"
+                          rx="2"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          d="M3 10h18M7 15h3"
+                        />
+                      </svg>
+                    </span>
+
+                    <span>
+                      <span className="block text-sm font-semibold text-[#214F43]">
+                        Billing
+                      </span>
+
+                      <span className="mt-0.5 block text-xs text-[#7A8A82]">
+                        Plan &amp; payments
                       </span>
                     </span>
                   </button>

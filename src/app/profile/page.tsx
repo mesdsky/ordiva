@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
+import PlanStatus from "@/components/PlanStatus";
 
 const currencies = [
   {
@@ -68,8 +69,6 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [changingPassword, setChangingPassword] =
-    useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const [email, setEmail] = useState("");
@@ -79,11 +78,8 @@ export default function ProfilePage() {
     useState("personal");
   const [financialGoal, setFinancialGoal] =
     useState("");
+  const [plan, setPlan] = useState<"free" | "premium">("free");
 
-  const [newPassword, setNewPassword] =
-    useState("");
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -111,7 +107,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "full_name, currency, account_type, financial_goal"
+          "full_name, currency, account_type, financial_goal, plan"
         )
         .eq("id", user.id)
         .single();
@@ -132,6 +128,7 @@ export default function ProfilePage() {
       setFinancialGoal(
         data?.financial_goal ?? ""
       );
+      setPlan(data?.plan === "premium" ? "premium" : "free");
 
       setDirty(false);
       setLoading(false);
@@ -225,7 +222,6 @@ export default function ProfilePage() {
           account_type: accountType,
           financial_goal:
             financialGoal.trim() || null,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
@@ -241,56 +237,6 @@ export default function ProfilePage() {
     setMessage("Profile updated successfully.");
     setDirty(false);
     setSaving(false);
-  }
-
-  async function handleChangePassword(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    setChangingPassword(true);
-    setMessage("");
-    setError("");
-
-    if (newPassword.length < 6) {
-      setError(
-        "Password must be at least 6 characters."
-      );
-      setChangingPassword(false);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      setChangingPassword(false);
-      return;
-    }
-
-    const supabase = createClient();
-
-    const { error: passwordError } =
-      await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-    if (passwordError) {
-      setError(
-        passwordError.message ||
-          "Unable to change your password."
-      );
-      setChangingPassword(false);
-      return;
-    }
-
-    setNewPassword("");
-    setConfirmPassword("");
-
-    setMessage(
-      "Your password has been updated successfully."
-    );
-
-    setDirty(false);
-    setChangingPassword(false);
   }
 
   async function handleLogout() {
@@ -327,9 +273,7 @@ export default function ProfilePage() {
           <div>
             <button
               type="button"
-              onClick={() =>
-                requestNavigation("dashboard")
-              }
+              onClick={() => requestNavigation("dashboard")}
               className="mb-4 text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]"
             >
               ← Back to Dashboard
@@ -340,27 +284,26 @@ export default function ProfilePage() {
             </p>
 
             <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
-              Profile &amp; Settings
+              Profile
             </h1>
 
             <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
-              Manage your personal information and
-              preferences.
+              Manage your personal information.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              requestNavigation("logout")
-            }
-            disabled={loggingOut}
-            className="w-fit rounded-2xl border border-[#DDE6D7] bg-white/70 px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loggingOut
-              ? "Logging out..."
-              : "Log out"}
-          </button>
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <PlanStatus plan={plan} />
+
+            <button
+              type="button"
+              onClick={() => requestNavigation("logout")}
+              disabled={loggingOut}
+              className="w-fit rounded-2xl border border-[#DDE6D7] bg-white/70 px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loggingOut ? "Logging out..." : "Log out"}
+            </button>
+          </div>
         </div>
 
         {/* =========================
@@ -600,90 +543,6 @@ export default function ProfilePage() {
             </div>
           </section>
         </form>
-
-        {/* =========================
-            SECURITY
-        ========================= */}
-
-        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
-          <div>
-            <p className="text-sm font-semibold">
-              Security
-            </p>
-
-            <p className="mt-1 text-sm text-[#7B9685]">
-              Update your password to keep your
-              account secure.
-            </p>
-          </div>
-
-          <form
-            onSubmit={handleChangePassword}
-            className="mt-6 space-y-5"
-          >
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="newPassword"
-                  className="text-sm font-semibold"
-                >
-                  New Password
-                </label>
-
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(event) => {
-                    setNewPassword(
-                      event.target.value
-                    );
-                    markDirty();
-                  }}
-                  placeholder="At least 6 characters"
-                  minLength={6}
-                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-semibold"
-                >
-                  Confirm New Password
-                </label>
-
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => {
-                    setConfirmPassword(
-                      event.target.value
-                    );
-                    markDirty();
-                  }}
-                  placeholder="Repeat your new password"
-                  minLength={6}
-                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={changingPassword}
-                className="rounded-2xl border border-[#DDE6D7] bg-white px-6 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {changingPassword
-                  ? "Updating..."
-                  : "Change Password"}
-              </button>
-            </div>
-          </form>
-        </section>
 
         {/* =========================
             FOOTER NOTE

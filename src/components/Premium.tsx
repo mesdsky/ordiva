@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { PREMIUM_COPY } from "@/lib/premium";
 
 export function PremiumBadge({ className = "" }: { className?: string }) {
@@ -69,6 +70,8 @@ export function PremiumModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const router = useRouter();
+
   if (!open) return null;
 
   return (
@@ -106,7 +109,7 @@ export function PremiumModal({
 
           <div className="mt-6 rounded-[1.5rem] border border-[#DDE6D7] bg-[#E8EEDB]/55 p-5">
             <p className="text-xs font-semibold text-[#214F43]">
-              Premium is coming soon.
+              Explore the plans available for Ordiva Premium.
             </p>
             <p className="mt-1.5 text-xs leading-5 text-[#7B9685]">
               {PREMIUM_COPY.comingSoon}
@@ -115,10 +118,13 @@ export function PremiumModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              router.push("/pricing");
+            }}
             className="mt-6 w-full rounded-full bg-[#214F43] px-5 py-3.5 text-sm font-semibold text-white transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#173C34]"
           >
-            Got it
+            View plans
           </button>
         </div>
       </div>

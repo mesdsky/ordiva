@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   formatCurrency,
   isSupportedCurrency,
@@ -78,22 +78,25 @@ export function useCurrency() {
     loadCurrency();
   }, []);
 
-  function convert(amount: number) {
-    return amount * rate;
-  }
+  const convert = useCallback(
+    (amount: number) => amount * rate,
+    [rate]
+  );
 
-  function format(amount: number) {
-    return formatCurrency(
-      convert(amount),
-      currency
-    );
-  }
+  const format = useCallback(
+    (amount: number) =>
+      formatCurrency(convert(amount), currency),
+    [convert, currency]
+  );
 
-  return {
-    currency,
-    rate,
-    loading,
-    convert,
-    format,
-  };
+  return useMemo(
+    () => ({
+      currency,
+      rate,
+      loading,
+      convert,
+      format,
+    }),
+    [currency, rate, loading, convert, format]
+  );
 }

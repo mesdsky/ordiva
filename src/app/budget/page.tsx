@@ -336,7 +336,10 @@ export default function BudgetPage() {
   }
 
   useEffect(() => {
+    // Async data loading intentionally updates UI state after the external request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadBudgetData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
 
   function markFormDirty() {
@@ -356,7 +359,7 @@ export default function BudgetPage() {
     if (hasReachedBudgetLimit) {
       setMessage("");
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -382,7 +385,7 @@ export default function BudgetPage() {
 
     if (hasReachedBudgetLimit) {
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -479,7 +482,7 @@ export default function BudgetPage() {
         )
       ) {
         setErrorMessage(
-          "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
+          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
         );
       } else if (error.code === "23505") {
         setErrorMessage(
@@ -701,7 +704,7 @@ export default function BudgetPage() {
           {hasReachedBudgetLimit && (
             <div className="mt-4 rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3">
               <p className="text-sm font-semibold text-[#214F43]">
-                You've reached your Free plan limit.
+                You&apos;ve reached your Free plan limit.
               </p>
 
               <p className="mt-1 text-xs text-[#7B9685]">

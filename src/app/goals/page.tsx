@@ -132,7 +132,10 @@ export default function GoalsPage() {
   }
 
   useEffect(() => {
+    // Async data loading intentionally updates UI state after the external request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadGoals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function markFormDirty() {
@@ -160,7 +163,7 @@ export default function GoalsPage() {
     if (hasReachedGoalLimit) {
       setMessage("");
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can create up to 3 goals."
+        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -184,7 +187,7 @@ export default function GoalsPage() {
 
     if (hasReachedGoalLimit) {
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can create up to 3 goals."
+        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -262,7 +265,7 @@ export default function GoalsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You've reached your Free plan limit. Free users can create up to 3 goals."
+          "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
         );
       } else {
         setErrorMessage(error.message);
@@ -547,7 +550,7 @@ export default function GoalsPage() {
           {hasReachedGoalLimit && (
             <div className="mt-4 rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3">
               <p className="text-sm font-semibold text-[#214F43]">
-                You've reached your Free plan limit.
+                You&apos;ve reached your Free plan limit.
               </p>
 
               <p className="mt-1 text-xs text-[#7B9685]">

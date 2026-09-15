@@ -235,7 +235,10 @@ export default function DebtsPage() {
   }
 
   useEffect(() => {
+    // Async data loading intentionally updates UI state after the external request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDebts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function resetForm() {
@@ -252,7 +255,7 @@ export default function DebtsPage() {
     if (hasReachedDebtLimit) {
       setMessage("");
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -278,7 +281,7 @@ export default function DebtsPage() {
 
     if (hasReachedDebtLimit) {
       setErrorMessage(
-        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -363,7 +366,7 @@ export default function DebtsPage() {
         )
       ) {
         setErrorMessage(
-          "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
         );
       } else {
         setErrorMessage(error.message);
@@ -826,7 +829,7 @@ export default function DebtsPage() {
 
             <p className="mt-1 text-xs text-[#7B9685]">
               Reduce the remaining balance when
-              you've paid or received money.
+              you&apos;ve paid or received money.
             </p>
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -969,7 +972,7 @@ export default function DebtsPage() {
 
               <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
                 Stay on top of what you owe and what
-                you're still waiting to receive.
+                you&apos;re still waiting to receive.
               </p>
             </div>
 
@@ -1009,7 +1012,7 @@ export default function DebtsPage() {
               </p>
 
               <p className="mt-1 text-xs text-[#7B9685]">
-                Settled debts and receivables don't
+                Settled debts and receivables don&apos;t
                 count toward your Free plan limit.
               </p>
             </div>
@@ -1032,7 +1035,7 @@ export default function DebtsPage() {
           {hasReachedDebtLimit && (
             <div className="mt-4 rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3">
               <p className="text-sm font-semibold text-[#214F43]">
-                You've reached your Free plan limit.
+                You&apos;ve reached your Free plan limit.
               </p>
 
               <p className="mt-1 text-xs text-[#7B9685]">
@@ -1189,7 +1192,7 @@ export default function DebtsPage() {
                       </option>
 
                       <option value="receivable">
-                        Receivable — I'm owed money
+                        Receivable — I&apos;m owed money
                       </option>
                     </select>
                   </div>
@@ -1414,12 +1417,12 @@ export default function DebtsPage() {
                   </div>
 
                   <p className="mt-6 text-2xl font-bold tracking-tight text-[#173C34]">
-                    Know what you owe — and what you're owed.
+                    Know what you owe — and what you&apos;re owed.
                   </p>
 
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#7B9685] md:text-base">
                     Keep loans, installments, and money
-                    you're waiting to receive in one place.
+                    you&apos;re waiting to receive in one place.
                     Ordiva helps you see outstanding balances,
                     due dates, and payment progress at a glance.
                   </p>

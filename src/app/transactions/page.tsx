@@ -126,6 +126,8 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     if (!editingId) {
+      // Reset dependent form state when the transaction type changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCategoryId("");
     }
   }, [type, editingId]);

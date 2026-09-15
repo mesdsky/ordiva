@@ -3,14 +3,128 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type FeatureKey =
+  | "dashboard"
+  | "transactions"
+  | "goals"
+  | "budget"
+  | "subscriptions"
+  | "debts";
+
+type FeatureDetail = {
+  title: string;
+  eyebrow: string;
+  overview: string;
+  bullets: string[];
+  route: string;
+};
+
+const featureDetails: Record<FeatureKey, FeatureDetail> = {
+  dashboard: {
+    title: "Dashboard",
+    eyebrow: "Your financial overview",
+    overview:
+      "See your balance, income, expenses, savings, and progress in one clear view.",
+    bullets: [
+      "Monthly financial snapshot",
+      "Cash-flow and savings overview",
+      "Quick access to your goals",
+    ],
+    route: "/dashboard",
+  },
+  transactions: {
+    title: "Transactions",
+    eyebrow: "Every movement, organized",
+    overview:
+      "Record income and expenses quickly, then keep your financial activity easy to understand.",
+    bullets: [
+      "Fast income and expense entry",
+      "Category-based organization",
+      "Clear monthly activity history",
+    ],
+    route: "/transactions",
+  },
+  goals: {
+    title: "Financial Goals",
+    eyebrow: "Make progress visible",
+    overview:
+      "Set meaningful targets and follow your progress as you build better money habits.",
+    bullets: [
+      "Create specific savings targets",
+      "Track progress toward each goal",
+      "Stay motivated with clear milestones",
+    ],
+    route: "/goals",
+  },
+  budget: {
+    title: "Smart Budget",
+    eyebrow: "Spend with intention",
+    overview:
+      "Plan your monthly spending and always know how much room you have left.",
+    bullets: [
+      "Set monthly category limits",
+      "Monitor remaining budget",
+      "Spot overspending early",
+    ],
+    route: "/budget",
+  },
+  subscriptions: {
+    title: "Subscriptions",
+    eyebrow: "Never miss a recurring payment",
+    overview:
+      "Keep recurring payments visible so you can plan ahead and avoid forgotten charges.",
+    bullets: [
+      "Track recurring services",
+      "See upcoming payment dates",
+      "Understand your monthly commitments",
+    ],
+    route: "/subscriptions",
+  },
+  debts: {
+    title: "Debt Tracker",
+    eyebrow: "A clearer path forward",
+    overview:
+      "Organize your debts, monitor repayments, and make progress toward financial freedom.",
+    bullets: [
+      "Keep every debt in one place",
+      "Track repayment progress",
+      "See what still needs attention",
+    ],
+    route: "/debts",
+  },
+};
+
 export default function Home() {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
+  const [selectedFeature, setSelectedFeature] =
+    useState<FeatureKey | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!selectedFeature) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedFeature(null);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedFeature]);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F5F2E8] text-[#173C34]">
@@ -339,7 +453,7 @@ export default function Home() {
                     </div>
 
                     <p className="mt-5 text-[9px] leading-4 text-[#5F7168]">
-                      Keep going. You're getting closer.
+                      Keep going. You&apos;re getting closer.
                     </p>
                   </div>
                 </div>
@@ -421,40 +535,52 @@ export default function Home() {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
+              featureKey="dashboard"
               title="Dashboard"
               description="Lihat kondisi keuanganmu secara keseluruhan dalam satu dashboard yang sederhana."
               icon="↗"
               featured
+              onClick={() => setSelectedFeature("dashboard")}
             />
 
             <FeatureCard
+              featureKey="transactions"
               title="Transactions"
               description="Catat pemasukan dan pengeluaran dengan cepat tanpa spreadsheet yang ribet."
               icon="＋"
+              onClick={() => setSelectedFeature("transactions")}
             />
 
             <FeatureCard
+              featureKey="goals"
               title="Financial Goals"
               description="Tetapkan target finansial dan pantau progress sampai tujuanmu tercapai."
               icon="◎"
+              onClick={() => setSelectedFeature("goals")}
             />
 
             <FeatureCard
+              featureKey="budget"
               title="Smart Budget"
               description="Buat budget bulanan dan tahu berapa banyak yang masih bisa kamu gunakan."
               icon="▣"
+              onClick={() => setSelectedFeature("budget")}
             />
 
             <FeatureCard
+              featureKey="subscriptions"
               title="Subscriptions"
               description="Pantau recurring payments dan subscription agar nggak ada tagihan yang terlewat."
               icon="◌"
+              onClick={() => setSelectedFeature("subscriptions")}
             />
 
             <FeatureCard
+              featureKey="debts"
               title="Debt Tracker"
               description="Kelola utang dan kewajiban dengan lebih teratur dan mudah dipantau."
               icon="%"
+              onClick={() => setSelectedFeature("debts")}
             />
           </div>
         </div>
@@ -844,6 +970,16 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {selectedFeature && (
+        <FeaturePreviewModal
+          featureKey={selectedFeature}
+          onClose={() => setSelectedFeature(null)}
+          onOpen={() =>
+            router.push(featureDetails[selectedFeature].route)
+          }
+        />
+      )}
     </main>
   );
 }
@@ -893,19 +1029,28 @@ function DashboardStat({
 }
 
 function FeatureCard({
+  featureKey,
   title,
   description,
   icon,
   featured = false,
+  onClick,
 }: {
+  featureKey: FeatureKey;
   title: string;
   description: string;
   icon: string;
   featured?: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div
-      className={`group relative overflow-hidden rounded-[1.7rem] p-7 transition-all duration-500 hover:-translate-y-2 ${
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Preview ${title}`}
+      aria-haspopup="dialog"
+      data-feature-key={featureKey}
+      className={`group relative block w-full overflow-hidden rounded-[1.7rem] p-7 text-left transition-all duration-500 hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#214F43] focus-visible:ring-offset-4 ${
         featured
           ? "bg-[#214F43] text-white shadow-[0_25px_60px_rgba(33,79,67,0.16)]"
           : "border border-[#DDE6D7] bg-white/55 shadow-[0_15px_40px_rgba(23,60,52,0.04)] backdrop-blur-xl hover:border-[#BFD0C3] hover:bg-white/75 hover:shadow-[0_25px_60px_rgba(23,60,52,0.08)]"
@@ -945,13 +1090,374 @@ function FeatureCard({
       </p>
 
       <div
-        className={`relative mt-7 flex translate-y-1 items-center gap-2 text-xs font-semibold opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 ${
+        className={`relative mt-7 flex translate-y-0 items-center gap-2 text-xs font-semibold opacity-100 transition-all duration-300 lg:translate-y-1 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 ${
           featured ? "text-[#C8D8BE]" : "text-[#214F43]"
         }`}
       >
-        Explore feature
+        <span className="lg:hidden">Tap to explore</span>
+        <span className="hidden lg:inline">Explore feature</span>
         <span>→</span>
       </div>
+    </button>
+  );
+}
+
+function FeaturePreviewModal({
+  featureKey,
+  onClose,
+  onOpen,
+}: {
+  featureKey: FeatureKey;
+  onClose: () => void;
+  onOpen: () => void;
+}) {
+  const detail = featureDetails[featureKey];
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] overflow-y-auto bg-[#102F29]/50 p-4 sm:p-8"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="flex min-h-full items-center justify-center py-4">
+        <div
+          className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#F5F2E8] shadow-[0_30px_100px_rgba(16,47,41,0.3)]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="feature-preview-title"
+        >
+          <div className="flex items-start justify-between gap-6 border-b border-[#DDE6D7] px-5 py-5 sm:px-8 sm:py-6">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7B9685]">
+                {detail.eyebrow}
+              </p>
+              <h2
+                id="feature-preview-title"
+                className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#173C34] sm:text-3xl"
+              >
+                {detail.title}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close feature preview"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#DDE6D7] bg-white/70 text-lg text-[#214F43] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#214F43]"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="grid gap-8 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="text-base leading-7 text-[#5F7168]">
+                {detail.overview}
+              </p>
+
+              <ul className="mt-6 space-y-3">
+                {detail.bullets.map((bullet) => (
+                  <li
+                    key={bullet}
+                    className="flex items-start gap-3 text-sm text-[#214F43]"
+                  >
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E8EEDB] text-xs font-bold text-[#214F43]">
+                      ✓
+                    </span>
+                    {bullet}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                onClick={onOpen}
+                className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#214F43] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(33,79,67,0.18)] transition hover:-translate-y-0.5 hover:bg-[#173C34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#214F43] focus-visible:ring-offset-4"
+              >
+                Open {detail.title}
+                <span>→</span>
+              </button>
+            </div>
+
+            <FeaturePreviewCanvas featureKey={featureKey} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturePreviewCanvas({
+  featureKey,
+}: {
+  featureKey: FeatureKey;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-[#DDE6D7] bg-white/75 p-3 shadow-[0_20px_50px_rgba(23,60,52,0.08)] sm:p-4">
+      <div className="flex items-center justify-between border-b border-[#DDE6D7] px-2 pb-3">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-[#AFC1A4]" />
+          <span className="h-2 w-2 rounded-full bg-[#DDE6D7]" />
+          <span className="h-2 w-2 rounded-full bg-[#DDE6D7]" />
+        </div>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7B9685]">
+          Ordiva preview
+        </span>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-[#DDE6D7] bg-[#F5F2E8] p-4 sm:p-5">
+        {featureKey === "dashboard" && <DashboardPreview />}
+        {featureKey === "transactions" && <TransactionsPreview />}
+        {featureKey === "goals" && <GoalsPreview />}
+        {featureKey === "budget" && <BudgetPreview />}
+        {featureKey === "subscriptions" && <SubscriptionsPreview />}
+        {featureKey === "debts" && <DebtsPreview />}
+      </div>
+    </div>
+  );
+}
+
+function PreviewHeading({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
+          {eyebrow}
+        </p>
+        <p className="mt-1 text-base font-semibold text-[#173C34]">
+          {title}
+        </p>
+      </div>
+      <span className="rounded-full bg-[#E8EEDB] px-2.5 py-1 text-[8px] font-semibold text-[#214F43]">
+        September 2026
+      </span>
+    </div>
+  );
+}
+
+function MiniProgress({
+  value,
+  color = "bg-[#214F43]",
+}: {
+  value: string;
+  color?: string;
+}) {
+  return (
+    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#DDE6D7]">
+      <div className={`h-full rounded-full ${color}`} style={{ width: value }} />
+    </div>
+  );
+}
+
+function DashboardPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Overview" title="Good morning 👋" />
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <DashboardStat label="Balance" value="Rp 8.24M" dark />
+        <DashboardStat label="Income" value="Rp 5.40M" />
+        <DashboardStat label="Expenses" value="Rp 2.16M" />
+        <DashboardStat label="Savings" value="Rp 3.24M" highlight />
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-[1.35fr_0.65fr]">
+        <div className="rounded-2xl border border-[#DDE6D7] bg-white/70 p-3">
+          <p className="text-[10px] font-semibold text-[#173C34]">Cash flow</p>
+          <div className="mt-5 flex h-24 items-end gap-2">
+            {[35, 52, 43, 66, 57, 74, 63, 87].map((height, index) => (
+              <div key={index} className="flex h-full flex-1 items-end gap-1">
+                <div className="w-1/2 rounded-t bg-[#AFC1A4]" style={{ height: `${height * 0.6}%` }} />
+                <div className="w-1/2 rounded-t bg-[#214F43]" style={{ height: `${height}%` }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-[#E8EEDB] p-3">
+          <p className="text-[10px] font-semibold text-[#173C34]">Emergency fund</p>
+          <p className="mt-4 text-2xl font-bold text-[#173C34]">72%</p>
+          <MiniProgress value="72%" />
+          <p className="mt-3 text-[9px] text-[#7B9685]">Rp 7.2M of Rp 10M</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TransactionsPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Activity" title="Your transactions" />
+      <div className="mt-4 flex items-center justify-between rounded-2xl bg-[#214F43] p-4 text-white">
+        <div>
+          <p className="text-[9px] text-white/60">This month</p>
+          <p className="mt-1 text-xl font-bold">Rp 3.24M saved</p>
+        </div>
+        <span className="rounded-full bg-white/15 px-3 py-1 text-[9px]">+12.4%</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {[
+          ["Salary", "Income", "+ Rp 5.40M", "bg-[#E8EEDB]"],
+          ["Groceries", "Food & dining", "− Rp 420K", "bg-white"],
+          ["Netflix", "Subscription", "− Rp 186K", "bg-white"],
+        ].map(([name, category, amount, background]) => (
+          <div key={name} className={`flex items-center justify-between rounded-xl border border-[#DDE6D7] ${background} px-3 py-2.5`}>
+            <div>
+              <p className="text-xs font-semibold text-[#173C34]">{name}</p>
+              <p className="mt-0.5 text-[9px] text-[#7B9685]">{category}</p>
+            </div>
+            <p className={`text-xs font-bold ${amount.startsWith("+") ? "text-[#214F43]" : "text-[#5F7168]"}`}>{amount}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function GoalsPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Your targets" title="Financial goals" />
+      <div className="mt-4 rounded-2xl bg-[#214F43] p-4 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[9px] text-white/60">Emergency fund</p>
+            <p className="mt-1 text-xl font-bold">Rp 7.2M</p>
+          </div>
+          <span className="text-3xl text-[#C8D8BE]">72%</span>
+        </div>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
+          <div className="h-full w-[72%] rounded-full bg-[#C8D8BE]" />
+        </div>
+        <p className="mt-2 text-[9px] text-white/60">Rp 2.8M left to reach your goal</p>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <OverviewStat label="Travel" value="38%" note="Rp 4.1M left" />
+        <OverviewStat label="New laptop" value="61%" note="Rp 1.2M left" highlight />
+      </div>
+    </>
+  );
+}
+
+function BudgetPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Monthly plan" title="Smart budget" />
+      <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#DDE6D7] bg-white/75 p-4">
+        <div>
+          <p className="text-[9px] text-[#7B9685]">Remaining budget</p>
+          <p className="mt-1 text-2xl font-bold text-[#173C34]">Rp 4.28M</p>
+        </div>
+        <div className="flex h-16 w-16 items-center justify-center rounded-full border-[7px] border-[#AFC1A4] text-xs font-bold text-[#214F43]">
+          68%
+        </div>
+      </div>
+      <div className="mt-3 space-y-3 rounded-2xl bg-[#E8EEDB] p-4">
+        <BudgetRow label="Needs" value="Rp 1.4M / 2.5M" progress="56%" />
+        <BudgetRow label="Lifestyle" value="Rp 740K / 1.5M" progress="49%" />
+        <BudgetRow label="Savings" value="Rp 3.2M / 4.0M" progress="80%" color="bg-[#7B9685]" />
+      </div>
+    </>
+  );
+}
+
+function BudgetRow({
+  label,
+  value,
+  progress,
+  color = "bg-[#214F43]",
+}: {
+  label: string;
+  value: string;
+  progress: string;
+  color?: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 text-[9px]">
+        <span className="font-semibold text-[#214F43]">{label}</span>
+        <span className="text-[#7B9685]">{value}</span>
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/80">
+        <div className={`h-full rounded-full ${color}`} style={{ width: progress }} />
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionsPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Recurring payments" title="Subscriptions" />
+      <div className="mt-4 flex items-center justify-between rounded-2xl bg-[#E8EEDB] p-4">
+        <div>
+          <p className="text-[9px] text-[#7B9685]">Monthly commitments</p>
+          <p className="mt-1 text-2xl font-bold text-[#173C34]">Rp 486K</p>
+        </div>
+        <span className="rounded-full bg-white/80 px-3 py-1 text-[9px] font-semibold text-[#214F43]">4 active</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {["Netflix", "Spotify", "Figma"].map((name, index) => (
+          <div key={name} className="flex items-center justify-between rounded-xl border border-[#DDE6D7] bg-white/75 px-3 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#214F43] text-xs text-[#C8D8BE]">{name[0]}</div>
+              <div>
+                <p className="text-xs font-semibold text-[#173C34]">{name}</p>
+                <p className="mt-0.5 text-[9px] text-[#7B9685]">Due in {index + 2} days</p>
+              </div>
+            </div>
+            <p className="text-xs font-bold text-[#214F43]">Rp {index === 0 ? "186K" : index === 1 ? "54K" : "320K"}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function DebtsPreview() {
+  return (
+    <>
+      <PreviewHeading eyebrow="Repayment progress" title="Debt tracker" />
+      <div className="mt-4 rounded-2xl bg-[#214F43] p-4 text-white">
+        <p className="text-[9px] text-white/60">Total remaining debt</p>
+        <p className="mt-1 text-2xl font-bold">Rp 12.6M</p>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
+          <div className="h-full w-[42%] rounded-full bg-[#C8D8BE]" />
+        </div>
+        <p className="mt-2 text-[9px] text-white/60">42% paid off</p>
+      </div>
+      <div className="mt-3 space-y-2 rounded-2xl border border-[#DDE6D7] bg-white/75 p-4">
+        <DebtRow name="Motorcycle loan" value="Rp 8.4M" progress="38%" />
+        <DebtRow name="Credit card" value="Rp 4.2M" progress="58%" />
+      </div>
+    </>
+  );
+}
+
+function DebtRow({
+  name,
+  value,
+  progress,
+}: {
+  name: string;
+  value: string;
+  progress: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[9px]">
+        <span className="font-semibold text-[#173C34]">{name}</span>
+        <span className="text-[#7B9685]">{value}</span>
+      </div>
+      <MiniProgress value={progress} color="bg-[#7B9685]" />
     </div>
   );
 }

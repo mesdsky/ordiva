@@ -1,544 +1,317 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Navigation from "@/components/Navigation";
 import { createClient } from "@/lib/supabase/client";
-
-type Profile = {
-  id: string;
-  full_name: string | null;
-  account_type: "personal" | "organization" | "business" | null;
-  currency: string | null;
-  financial_goal: string | null;
-};
-
-const ACCOUNT_TYPES = [
-  {
-    value: "personal",
-    label: "Personal",
-    description: "Manage your personal finances",
-    icon: "👤",
-  },
-  {
-    value: "organization",
-    label: "Organization",
-    description: "Manage finances for an organization",
-    icon: "🏢",
-  },
-  {
-    value: "business",
-    label: "Business",
-    description: "Manage business finances",
-    icon: "💼",
-  },
-];
+import ConfirmModal from "@/components/ConfirmModal";
+import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
+import PlanStatus from "@/components/PlanStatus";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient();
-
-  const [profile, setProfile] = useState<Profile | null>(null);
-
-  const [fullName, setFullName] = useState("");
-  const [accountType, setAccountType] = useState<
-    "personal" | "organization" | "business"
-  >("personal");
-  const [currency, setCurrency] = useState("IDR");
-  const [financialGoal, setFinancialGoal] = useState("");
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const { isDirty, setDirty } = useUnsavedChanges();
+  const markDirty = () => setDirty(true);
 
   const [loading, setLoading] = useState(true);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [plan, setPlan] = useState<"free" | "premium">("free");
   const [changingPassword, setChangingPassword] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-
-  const [profileMessage, setProfileMessage] = useState("");
-  const [profileError, setProfileError] = useState("");
-
-  const [passwordMessage, setPasswordMessage] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "dashboard" | "profile" | "logout" | null
+  >(null);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    async function verifySession() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  async function loadProfile() {
-    setLoading(true);
+      if (!user) {
+        router.replace("/login");
+        return;
+      }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (userError || !user) {
-      router.replace("/login");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, account_type, currency, financial_goal")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Error loading profile:", error);
-      setProfileError("Failed to load your profile.");
+      setPlan(profile?.plan === "premium" ? "premium" : "free");
       setLoading(false);
+    }
+
+    verifySession();
+  }, [router]);
+
+  function requestNavigation(
+    action: "dashboard" | "profile" | "logout"
+  ) {
+    if (isDirty) {
+      setPendingAction(action);
+      setShowUnsavedModal(true);
       return;
     }
 
-    if (data) {
-      const profileData = data as Profile;
-
-      setProfile(profileData);
-      setFullName(profileData.full_name ?? "");
-      setAccountType(profileData.account_type ?? "personal");
-      setCurrency(profileData.currency ?? "IDR");
-      setFinancialGoal(profileData.financial_goal ?? "");
+    if (action === "dashboard") {
+      router.push("/dashboard");
+      return;
     }
 
-    setLoading(false);
+    if (action === "profile") {
+      router.push("/profile");
+      return;
+    }
+
+    handleLogout();
   }
 
-  async function handleSaveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function closeUnsavedModal() {
+    if (loggingOut) return;
+    setShowUnsavedModal(false);
+    setPendingAction(null);
+  }
 
-    setSavingProfile(true);
-    setProfileMessage("");
-    setProfileError("");
+  async function leaveWithoutSaving() {
+    const action = pendingAction;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    setShowUnsavedModal(false);
+    setPendingAction(null);
+    setDirty(false);
 
-    if (!user) {
-      router.replace("/login");
-      return;
+    if (action === "dashboard") {
+      router.push("/dashboard");
+    } else if (action === "profile") {
+      router.push("/profile");
+    } else if (action === "logout") {
+      await handleLogout();
     }
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: fullName.trim() || null,
-        account_type: accountType,
-        currency,
-        financial_goal: financialGoal.trim() || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id)
-      .select("id, full_name, account_type, currency, financial_goal")
-      .single();
-
-    if (error) {
-      console.error("Error updating profile:", error);
-      setProfileError(error.message || "Failed to save your profile.");
-      setSavingProfile(false);
-      return;
-    }
-
-    setProfile(data as Profile);
-    setProfileMessage("Profile updated successfully.");
-    setSavingProfile(false);
   }
 
   async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setChangingPassword(true);
-    setPasswordMessage("");
-    setPasswordError("");
+    setMessage("");
+    setError("");
 
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters.");
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
       setChangingPassword(false);
       return;
     }
 
-    if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
       setChangingPassword(false);
       return;
     }
 
-    const { error } = await supabase.auth.updateUser({
-      password,
+    const supabase = createClient();
+    const { error: passwordError } = await supabase.auth.updateUser({
+      password: newPassword,
     });
 
-    if (error) {
-      console.error("Error changing password:", error);
-      setPasswordError(error.message || "Failed to change password.");
+    if (passwordError) {
+      setError(passwordError.message || "Unable to change your password.");
       setChangingPassword(false);
       return;
     }
 
-    setPassword("");
+    setNewPassword("");
     setConfirmPassword("");
-    setPasswordMessage("Password changed successfully.");
+    setMessage("Your password has been updated successfully.");
+    setDirty(false);
     setChangingPassword(false);
   }
 
   async function handleLogout() {
+    if (loggingOut) return;
     setLoggingOut(true);
 
-    const { error } = await supabase.auth.signOut();
+    const supabase = createClient();
+    await supabase.auth.signOut();
 
-    if (error) {
-      console.error("Logout error:", error);
-      setLoggingOut(false);
-      return;
-    }
-
+    setDirty(false);
     router.replace("/login");
+    router.refresh();
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <Navigation />
-
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-10 w-48 rounded-xl bg-[#DDE6D7]" />
-
-            <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-              <div className="h-[520px] rounded-3xl bg-white" />
-              <div className="h-[520px] rounded-3xl bg-white" />
-            </div>
-          </div>
-        </main>
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8]">
+        <p className="text-[#7B9685]">Loading your settings...</p>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
-      <Navigation />
+    <main className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
+      <div className="mx-auto max-w-5xl px-6 py-8 md:px-12 md:py-10">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <button
+              type="button"
+              onClick={() => requestNavigation("dashboard")}
+              className="mb-4 text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]"
+            >
+              ← Back to Dashboard
+            </button>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <p className="mb-2 text-sm font-medium text-[#7B9685]">
-            Your account
-          </p>
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
+              Account control
+            </p>
 
-          <h1 className="text-3xl font-bold tracking-tight text-[#173C34] sm:text-4xl">
-            Profile & Settings
-          </h1>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
+              Settings
+            </h1>
 
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6B7D73] sm:text-base">
-            Manage your personal information and financial preferences.
-          </p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-          {/* LEFT */}
-          <div className="space-y-6">
-            {/* Profile card */}
-            <section className="rounded-3xl border border-[#DDE6D7] bg-white p-5 shadow-sm sm:p-7">
-              <div className="mb-7 flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#E8EEDB] text-2xl">
-                  {fullName
-                    ? fullName.charAt(0).toUpperCase()
-                    : "U"}
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-bold text-[#173C34]">
-                    Profile Information
-                  </h2>
-
-                  <p className="mt-1 text-sm text-[#7B9685]">
-                    Keep your account information up to date.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveProfile} className="space-y-6">
-                {/* Full name */}
-                <div>
-                  <label
-                    htmlFor="fullName"
-                    className="mb-2 block text-sm font-semibold text-[#173C34]"
-                  >
-                    Full name
-                  </label>
-
-                  <input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#FAFBF6] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#A0ADA5] focus:border-[#7B9685] focus:ring-2 focus:ring-[#AFC1A4]/30"
-                  />
-                </div>
-
-                {/* Account type */}
-                <div>
-                  <label className="mb-3 block text-sm font-semibold text-[#173C34]">
-                    Account type
-                  </label>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {ACCOUNT_TYPES.map((type) => {
-                      const selected = accountType === type.value;
-
-                      return (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={() =>
-                            setAccountType(
-                              type.value as
-                                | "personal"
-                                | "organization"
-                                | "business"
-                            )
-                          }
-                          className={`rounded-2xl border p-4 text-left transition ${
-                            selected
-                              ? "border-[#7B9685] bg-[#E8EEDB] shadow-sm"
-                              : "border-[#DDE6D7] bg-[#FAFBF6] hover:border-[#AFC1A4] hover:bg-[#F5F7EF]"
-                          }`}
-                        >
-                          <div className="mb-3 text-xl">{type.icon}</div>
-
-                          <p className="text-sm font-bold text-[#173C34]">
-                            {type.label}
-                          </p>
-
-                          <p className="mt-1 text-xs leading-5 text-[#7B9685]">
-                            {type.description}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Currency */}
-                <div>
-                  <label
-                    htmlFor="currency"
-                    className="mb-2 block text-sm font-semibold text-[#173C34]"
-                  >
-                    Currency
-                  </label>
-
-                  <select
-                    id="currency"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full appearance-none rounded-2xl border border-[#DDE6D7] bg-[#FAFBF6] px-4 py-3 text-sm font-medium text-[#173C34] outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#AFC1A4]/30"
-                  >
-                    <option value="IDR">IDR — Indonesian Rupiah</option>
-                    <option value="USD">USD — US Dollar</option>
-                    <option value="SGD">SGD — Singapore Dollar</option>
-                    <option value="MYR">MYR — Malaysian Ringgit</option>
-                    <option value="EUR">EUR — Euro</option>
-                    <option value="GBP">GBP — British Pound</option>
-                    <option value="JPY">JPY — Japanese Yen</option>
-                  </select>
-                </div>
-
-                {/* Financial goal */}
-                <div>
-                  <label
-                    htmlFor="financialGoal"
-                    className="mb-2 block text-sm font-semibold text-[#173C34]"
-                  >
-                    Financial goal
-                  </label>
-
-                  <textarea
-                    id="financialGoal"
-                    value={financialGoal}
-                    onChange={(e) => setFinancialGoal(e.target.value)}
-                    placeholder="e.g. Build an emergency fund, save for a laptop..."
-                    rows={4}
-                    className="w-full resize-none rounded-2xl border border-[#DDE6D7] bg-[#FAFBF6] px-4 py-3 text-sm leading-6 text-[#173C34] outline-none transition placeholder:text-[#A0ADA5] focus:border-[#7B9685] focus:ring-2 focus:ring-[#AFC1A4]/30"
-                  />
-                </div>
-
-                {profileMessage && (
-                  <div className="rounded-2xl border border-[#C9DCC5] bg-[#EEF5E9] px-4 py-3 text-sm font-medium text-[#3F6955]">
-                    {profileMessage}
-                  </div>
-                )}
-
-                {profileError && (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                    {profileError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={savingProfile}
-                  className="w-full rounded-2xl bg-[#214F43] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#173C34] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {savingProfile ? "Saving changes..." : "Save changes"}
-                </button>
-              </form>
-            </section>
+            <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
+              Manage security and app preferences without changing your profile identity.
+            </p>
           </div>
 
-          {/* RIGHT */}
-          <div className="space-y-6">
-            {/* Account overview */}
-            <section className="rounded-3xl border border-[#DDE6D7] bg-[#214F43] p-6 text-white shadow-sm">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#C7D8C5]">
-                    Account
-                  </p>
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <PlanStatus plan={plan} />
 
-                  <h2 className="mt-2 text-xl font-bold">
-                    {fullName || "Your Ordiva account"}
-                  </h2>
-                </div>
+            <button
+              type="button"
+              onClick={() => requestNavigation("logout")}
+              disabled={loggingOut}
+              className="w-fit rounded-2xl border border-[#DDE6D7] bg-white/70 px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loggingOut ? "Logging out..." : "Log out"}
+            </button>
+          </div>
+        </div>
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-xl">
-                  {fullName
-                    ? fullName.charAt(0).toUpperCase()
-                    : "U"}
-                </div>
+        {(message || error) && (
+          <div
+            className={`mt-8 rounded-2xl border px-5 py-4 text-sm ${
+              error
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-[#DDE6D7] bg-[#E8EEDB] text-[#214F43]"
+            }`}
+          >
+            {error || message}
+          </div>
+        )}
+
+        <section className="mt-8 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+          <p className="text-sm font-semibold">Profile preferences</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7B9685]">
+            Your name, currency, account type, and financial goal are identity preferences managed from your Profile.
+          </p>
+          <button
+            type="button"
+            onClick={() => requestNavigation("profile")}
+            className="mt-5 rounded-2xl border border-[#DDE6D7] bg-white px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB]"
+          >
+            Open Profile
+          </button>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+          <div>
+            <p className="text-sm font-semibold">Security</p>
+            <p className="mt-1 text-sm text-[#7B9685]">
+              Update your password to keep your account secure.
+            </p>
+          </div>
+
+          <form onSubmit={handleChangePassword} className="mt-6 space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="newPassword" className="text-sm font-semibold">
+                  New Password
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value);
+                    markDirty();
+                  }}
+                  placeholder="At least 6 characters"
+                  minLength={6}
+                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                />
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
-                  <span className="text-sm text-[#D6E2D5]">
-                    Account type
-                  </span>
-
-                  <span className="text-sm font-semibold capitalize">
-                    {accountType}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
-                  <span className="text-sm text-[#D6E2D5]">
-                    Currency
-                  </span>
-
-                  <span className="text-sm font-semibold">
-                    {currency}
-                  </span>
-                </div>
+              <div>
+                <label htmlFor="confirmPassword" className="text-sm font-semibold">
+                  Confirm New Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    markDirty();
+                  }}
+                  placeholder="Repeat your new password"
+                  minLength={6}
+                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                />
               </div>
-            </section>
+            </div>
 
-            {/* Password */}
-            <section className="rounded-3xl border border-[#DDE6D7] bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-6">
-                <h2 className="text-lg font-bold text-[#173C34]">
-                  Security
-                </h2>
-
-                <p className="mt-1 text-sm leading-6 text-[#7B9685]">
-                  Update your password to keep your account secure.
-                </p>
-              </div>
-
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="mb-2 block text-sm font-semibold text-[#173C34]"
-                  >
-                    New password
-                  </label>
-
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    autoComplete="new-password"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#FAFBF6] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#A0ADA5] focus:border-[#7B9685] focus:ring-2 focus:ring-[#AFC1A4]/30"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="confirmPassword"
-                    className="mb-2 block text-sm font-semibold text-[#173C34]"
-                  >
-                    Confirm password
-                  </label>
-
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat your new password"
-                    autoComplete="new-password"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#FAFBF6] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#A0ADA5] focus:border-[#7B9685] focus:ring-2 focus:ring-[#AFC1A4]/30"
-                  />
-                </div>
-
-                {passwordMessage && (
-                  <div className="rounded-2xl border border-[#C9DCC5] bg-[#EEF5E9] px-4 py-3 text-sm font-medium text-[#3F6955]">
-                    {passwordMessage}
-                  </div>
-                )}
-
-                {passwordError && (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                    {passwordError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={changingPassword}
-                  className="w-full rounded-2xl border border-[#AFC1A4] bg-[#F5F7EF] px-5 py-3.5 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {changingPassword
-                    ? "Updating password..."
-                    : "Change password"}
-                </button>
-              </form>
-            </section>
-
-            {/* Danger zone */}
-            <section className="rounded-3xl border border-red-100 bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-5">
-                <h2 className="text-lg font-bold text-[#173C34]">
-                  Account actions
-                </h2>
-
-                <p className="mt-1 text-sm leading-6 text-[#7B9685]">
-                  Sign out from your current Ordiva session.
-                </p>
-              </div>
-
+            <div className="flex justify-end">
               <button
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-5 py-3.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+                disabled={changingPassword}
+                className="rounded-2xl border border-[#DDE6D7] bg-white px-6 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span>↪</span>
-                {loggingOut ? "Signing out..." : "Log out"}
+                {changingPassword ? "Updating..." : "Change Password"}
               </button>
-            </section>
-          </div>
-        </div>
+            </div>
+          </form>
+        </section>
 
-        {/* Footer */}
-        <div className="mt-8 pb-4 text-center">
-          <p className="text-xs text-[#9AA79F]">
-            Ordiva · Plan Smarter. Live Brighter.
+        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+          <p className="text-sm font-semibold">Billing &amp; plan</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7B9685]">
+            Review your current plan and payment history from the billing area.
           </p>
+          <Link
+            href="/billing"
+            className="mt-5 inline-flex rounded-2xl border border-[#DDE6D7] bg-white px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB]"
+          >
+            Open Billing
+          </Link>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/55 p-6 md:p-8">
+          <p className="text-sm font-semibold">Notifications</p>
+          <p className="mt-1 text-sm leading-6 text-[#7B9685]">
+            Notification preferences will be added when Ordiva has notification delivery to manage. Nothing is enabled by default.
+          </p>
+        </section>
+
+        <div className="pb-6 pt-8 text-center">
+          <p className="text-xs text-[#7B9685]">Ordiva · Plan Smarter. Live Brighter.</p>
         </div>
-      </main>
-    </div>
+      </div>
+
+      <ConfirmModal
+        open={showUnsavedModal}
+        title="Leave this page?"
+        description="You still have unsaved changes. If you leave now, those changes will be lost."
+        confirmLabel="Leave without saving"
+        cancelLabel="Stay on page"
+        onConfirm={leaveWithoutSaving}
+        onCancel={closeUnsavedModal}
+        loading={loggingOut}
+      />
+    </main>
   );
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -45,12 +45,6 @@ type DailyData = {
   day: string;
   income: number;
   expense: number;
-};
-
-type CategoryData = {
-  name: string;
-  amount: number;
-  percentage: number;
 };
 
 type MonthlyData = {
@@ -228,7 +222,10 @@ export default function ReportsPage() {
   }
 
   useEffect(() => {
+    // Async data loading intentionally updates UI state after the external request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadReportData(selectedMonth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
 
   const categoryMap = useMemo(() => {
@@ -694,13 +691,13 @@ export default function ReportsPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#102F29]/95 via-[#173C34]/82 to-[#173C34]/48" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#173C34]/70 via-transparent to-[#173C34]/10" />
 
-          <div className="pointer-events-none absolute -left-28 top-1/4 h-80 w-80 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-28 top-1/4 h-80 w-80 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full bg-gradient-to-bl from-white/10 to-transparent" />
 
           <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-16 md:px-12 lg:px-16">
             <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
               <div className="max-w-3xl">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
                   <span className="h-2 w-2 rounded-full bg-[#C8D8BE] shadow-[0_0_14px_rgba(200,216,190,0.8)]" />
                   Financial intelligence
                 </div>
@@ -730,8 +727,8 @@ export default function ReportsPage() {
 
               {/* PERIOD SELECTOR */}
               <div className="w-full max-w-sm lg:w-80">
-                <div className="rounded-[2rem] border border-white/35 bg-white/12 p-2 shadow-[0_30px_80px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-2xl">
-                  <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+                <div className="rounded-[2rem] border border-white/35 bg-white/12 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md">
+                  <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-6">
                     <label
                       htmlFor="report-month"
                       className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/50"
@@ -766,19 +763,19 @@ export default function ReportsPage() {
             {/* FLOATING SUMMARY */}
             {!loading && !currencyLoading && (
               <div className="relative z-20 mt-10 grid gap-3 sm:grid-cols-3">
-                <ReportHeroStat
+                <MemoReportHeroStat
                   label="Income"
                   value={formatCurrency(totalIncome)}
                   icon="↗"
                 />
 
-                <ReportHeroStat
+                <MemoReportHeroStat
                   label="Expenses"
                   value={formatCurrency(totalExpense)}
                   icon="↘"
                 />
 
-                <ReportHeroStat
+                <MemoReportHeroStat
                   label="Savings"
                   value={formatCurrency(savings)}
                   icon="◇"
@@ -793,7 +790,7 @@ export default function ReportsPage() {
             REPORT CONTENT
         ===================================================== */}
         <section className="relative -mt-10 rounded-t-[2.75rem] bg-[linear-gradient(180deg,#F5F2E8_0%,#F8F6EF_48%,#F5F2E8_100%)] px-6 pb-20 pt-14 md:px-12 lg:px-16">
-          <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
+          <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
 
           <div className="relative mx-auto max-w-7xl">
             {errorMessage && (
@@ -836,7 +833,7 @@ export default function ReportsPage() {
                     KEY METRICS
                 ================================================= */}
                 <div className="grid gap-0 border-y border-[#DDE6D7] md:grid-cols-3 md:divide-x md:divide-[#DDE6D7]">
-                  <ReportMetric
+                  <MemoReportMetric
                     label="Net savings"
                     value={formatCurrency(savings)}
                     description={
@@ -847,13 +844,13 @@ export default function ReportsPage() {
                     danger={savings < 0}
                   />
 
-                  <ReportMetric
+                  <MemoReportMetric
                     label="Savings rate"
                     value={`${savingsRate.toFixed(1)}%`}
                     description="Share of income kept"
                   />
 
-                  <ReportMetric
+                  <MemoReportMetric
                     label="Transactions"
                     value={String(
                       transactions.length
@@ -866,23 +863,23 @@ export default function ReportsPage() {
                     CASH FLOW
                 ================================================= */}
                 <section className="mt-10">
-                  <ReportSectionHeader
+                  <MemoReportSectionHeader
                     eyebrow="Cash flow"
                     title="Income vs expenses."
                     description={`Daily movement throughout ${monthLabel}.`}
                   />
 
-                  <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl md:p-7">
+                  <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] md:p-7">
                     {transactions.length === 0 ? (
                       <EmptyState text="No transactions recorded for this month." />
                     ) : (
                       <>
                         <div className="flex flex-wrap items-center gap-4 border-b border-[#DDE6D7] pb-5">
-                          <ChartLegend
+                          <MemoChartLegend
                             color="bg-[#214F43]"
                             label="Income"
                           />
-                          <ChartLegend
+                          <MemoChartLegend
                             color="bg-[#AFC1A4]"
                             label="Expense"
                           />
@@ -898,6 +895,7 @@ export default function ReportsPage() {
                           <ResponsiveContainer
                             width="100%"
                             height="100%"
+                            debounce={120}
                           >
                             <BarChart
                               data={dailyData}
@@ -966,8 +964,6 @@ export default function ReportsPage() {
                                     "rgba(249,248,242,0.96)",
                                   boxShadow:
                                     "0 15px 40px rgba(23,60,52,0.12)",
-                                  backdropFilter:
-                                    "blur(12px)",
                                 }}
                                 labelStyle={{
                                   color: "#173C34",
@@ -1013,7 +1009,7 @@ export default function ReportsPage() {
                 <div className="mt-10 grid gap-10 lg:grid-cols-[1.25fr_0.75fr]">
                   {/* SPENDING */}
                   <section>
-                    <ReportSectionHeader
+                    <MemoReportSectionHeader
                       eyebrow="Spending"
                       title="Where it went."
                       description={
@@ -1023,7 +1019,7 @@ export default function ReportsPage() {
                       }
                     />
 
-                    <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl md:p-7">
+                    <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] md:p-7">
                       {categorySpending.length === 0 ? (
                         <EmptyState text="No expense data available for this month." />
                       ) : (
@@ -1098,15 +1094,15 @@ export default function ReportsPage() {
 
                   {/* SAVINGS */}
                   <section>
-                    <ReportSectionHeader
+                    <MemoReportSectionHeader
                       eyebrow="Savings"
                       title="What you kept."
                       description="A simple view of your saving discipline."
                     />
 
-                    <div className="relative mt-5 min-h-[330px] overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] p-7 text-white shadow-[0_25px_70px_rgba(33,79,67,0.14)]">
-                      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-                      <div className="pointer-events-none absolute -bottom-20 -left-10 h-44 w-44 rounded-full bg-[#AFC1A4]/10 blur-3xl" />
+                    <div className="relative mt-5 min-h-[330px] overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] p-7 text-white shadow-[0_20px_50px_rgba(33,79,67,0.12)]">
+                      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-bl from-white/10 to-transparent" />
+                      <div className="pointer-events-none absolute -bottom-20 -left-10 h-44 w-44 rounded-full bg-gradient-to-tr from-[#AFC1A4]/10 to-transparent" />
 
                       <div className="relative">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/45">
@@ -1118,7 +1114,7 @@ export default function ReportsPage() {
                             {savingsRate.toFixed(1)}%
                           </p>
 
-                          <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold text-[#C8D8BE] backdrop-blur-xl">
+                          <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold text-[#C8D8BE]">
                             {savings >= 0
                               ? "On track"
                               : "Needs attention"}
@@ -1179,7 +1175,7 @@ export default function ReportsPage() {
                     PREMIUM 12-MONTH TREND
                 ================================================= */}
                 <section className="mt-12">
-                  <ReportSectionHeader
+                  <MemoReportSectionHeader
                     eyebrow="Premium intelligence"
                     title="See the bigger trend."
                     description="Track how your income, expenses, and savings have evolved over the last 12 months."
@@ -1193,17 +1189,17 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl md:p-7">
+                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] md:p-7">
                         <div className="flex flex-wrap items-center gap-4 border-b border-[#DDE6D7] pb-5">
-                          <ChartLegend
+                          <MemoChartLegend
                             color="bg-[#214F43]"
                             label="Income"
                           />
-                          <ChartLegend
+                          <MemoChartLegend
                             color="bg-[#AFC1A4]"
                             label="Expenses"
                           />
-                          <ChartLegend
+                          <MemoChartLegend
                             color="bg-[#7B9685]"
                             label="Savings"
                           />
@@ -1213,6 +1209,7 @@ export default function ReportsPage() {
                           <ResponsiveContainer
                             width="100%"
                             height="100%"
+                            debounce={120}
                           >
                             <LineChart
                               data={monthlyTrend}
@@ -1311,7 +1308,7 @@ export default function ReportsPage() {
                     MONTHLY COMPARISON
                 ================================================= */}
                 <section className="mt-12">
-                  <ReportSectionHeader
+                  <MemoReportSectionHeader
                     eyebrow="Premium intelligence"
                     title="Better than last month?"
                     description={`Compare ${monthLabel} with ${formatMonthLabel(previousMonth)}.`}
@@ -1325,8 +1322,8 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="grid gap-0 rounded-[2rem] border border-[#DDE6D7] bg-white/60 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl md:grid-cols-3 md:divide-x md:divide-[#DDE6D7]">
-                        <ComparisonMetric
+                      <div className="grid gap-0 rounded-[2rem] border border-[#DDE6D7] bg-white/60 shadow-[0_20px_55px_rgba(23,60,52,0.06)] md:grid-cols-3 md:divide-x md:divide-[#DDE6D7]">
+                        <MemoComparisonMetric
                           label="Income"
                           current={totalIncome}
                           previous={
@@ -1337,7 +1334,7 @@ export default function ReportsPage() {
                           }
                         />
 
-                        <ComparisonMetric
+                        <MemoComparisonMetric
                           label="Expenses"
                           current={totalExpense}
                           previous={
@@ -1349,7 +1346,7 @@ export default function ReportsPage() {
                           inverse
                         />
 
-                        <ComparisonMetric
+                        <MemoComparisonMetric
                           label="Savings"
                           current={savings}
                           previous={
@@ -1369,7 +1366,7 @@ export default function ReportsPage() {
                 ================================================= */}
                 <div className="mt-12 grid gap-10 lg:grid-cols-2">
                   <section>
-                    <ReportSectionHeader
+                    <MemoReportSectionHeader
                       eyebrow="Top categories"
                       title="Your biggest spends."
                       description={
@@ -1421,15 +1418,15 @@ export default function ReportsPage() {
                   </section>
 
                   <section>
-                    <ReportSectionHeader
+                    <MemoReportSectionHeader
                       eyebrow="Quick read"
                       title="What the numbers say."
                       description="A simple interpretation of this month's activity."
                     />
 
-                    <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/55 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.05)] backdrop-blur-xl">
+                    <div className="mt-5 rounded-[2rem] border border-[#DDE6D7] bg-white/55 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.05)]">
                       <div className="space-y-6">
-                        <InsightRow
+                        <MemoInsightRow
                           label="Income"
                           value={formatCurrency(
                             totalIncome
@@ -1441,7 +1438,7 @@ export default function ReportsPage() {
                           }
                         />
 
-                        <InsightRow
+                        <MemoInsightRow
                           label="Expenses"
                           value={formatCurrency(
                             totalExpense
@@ -1453,7 +1450,7 @@ export default function ReportsPage() {
                           }
                         />
 
-                        <InsightRow
+                        <MemoInsightRow
                           label="Net"
                           value={formatCurrency(
                             savings
@@ -1489,7 +1486,7 @@ export default function ReportsPage() {
                     PREMIUM ANALYTICS
                 ================================================= */}
                 <section className="mt-12">
-                  <ReportSectionHeader
+                  <MemoReportSectionHeader
                     eyebrow="Premium intelligence"
                     title="Know what is really happening."
                     description="Deeper signals behind your monthly numbers."
@@ -1504,8 +1501,8 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="relative overflow-hidden rounded-[2rem] border border-[#DDE6D7] bg-[#214F43] p-7 text-white shadow-[0_25px_70px_rgba(33,79,67,0.12)]">
-                        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
+                      <div className="relative overflow-hidden rounded-[2rem] border border-[#DDE6D7] bg-[#214F43] p-7 text-white shadow-[0_20px_50px_rgba(33,79,67,0.10)]">
+                        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
 
                         <div className="relative">
                           <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/45">
@@ -1547,7 +1544,7 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl">
+                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.06)]">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
                           Spending pattern
                         </p>
@@ -1589,7 +1586,7 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl">
+                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-7 shadow-[0_20px_55px_rgba(23,60,52,0.06)]">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
                           Advanced insight
                         </p>
@@ -1610,7 +1607,7 @@ export default function ReportsPage() {
                     FULL CATEGORY ANALYSIS — PREMIUM
                 ================================================= */}
                 <section className="mt-12">
-                  <ReportSectionHeader
+                  <MemoReportSectionHeader
                     eyebrow="Premium intelligence"
                     title="Full category analysis."
                     description="See the complete distribution of your spending instead of only the top categories."
@@ -1624,7 +1621,7 @@ export default function ReportsPage() {
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
-                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] backdrop-blur-xl md:p-7">
+                      <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/60 p-5 shadow-[0_20px_55px_rgba(23,60,52,0.06)] md:p-7">
                         {categorySpending.length === 0 ? (
                           <EmptyState text="No category data available for this month." />
                         ) : (
@@ -1684,9 +1681,9 @@ export default function ReportsPage() {
                     EMPTY OVERALL STATE
                 ================================================= */}
                 {transactions.length === 0 && (
-                  <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] p-8 text-white shadow-[0_25px_70px_rgba(33,79,67,0.14)] md:p-10">
+                  <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] p-8 text-white shadow-[0_20px_50px_rgba(33,79,67,0.12)] md:p-10">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#214F43] via-[#214F43] to-[#173C34]" />
-                    <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
 
                     <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                       <div>
@@ -1711,7 +1708,7 @@ export default function ReportsPage() {
                             "/transactions"
                           )
                         }
-                        className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/20"
+                        className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition hover:-translate-y-1 hover:bg-white/20"
                       >
                         + Add Transaction
                         <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
@@ -1772,14 +1769,12 @@ function ReportHeroStat({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 ${
+      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)] transition duration-300 hover:-translate-y-1 ${
         highlight
           ? "border-[#C8D8BE]/30 bg-[#AFC1A4]/15"
           : "border-white/20 bg-white/10"
       }`}
     >
-      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-
       <div className="relative flex items-center justify-between gap-4">
         <div>
           <p className="text-[9px] uppercase tracking-[0.18em] text-white/45">
@@ -1992,6 +1987,13 @@ function ComparisonMetric({
     </div>
   );
 }
+
+const MemoReportHeroStat = memo(ReportHeroStat);
+const MemoReportMetric = memo(ReportMetric);
+const MemoReportSectionHeader = memo(ReportSectionHeader);
+const MemoChartLegend = memo(ChartLegend);
+const MemoInsightRow = memo(InsightRow);
+const MemoComparisonMetric = memo(ComparisonMetric);
 
 /* =============================================================
    PREMIUM LOCKED CARD

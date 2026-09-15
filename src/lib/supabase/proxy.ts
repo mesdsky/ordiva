@@ -2,12 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  console.log(
-    "[Ordiva Proxy] RUNNING:",
-    request.nextUrl.pathname
-  );
 
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request,
   });
 
@@ -44,11 +40,6 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  console.log("[Ordiva Proxy] USER:", user?.id ?? "NONE");
-  console.log(
-    "[Ordiva Proxy] USER ERROR:",
-    userError?.message ?? "NONE"
-  );
 
   const isPublicRoute =
     pathname === "/" ||
@@ -70,6 +61,8 @@ export async function updateSession(request: NextRequest) {
     "/debts",
     "/reports",
     "/profile",
+    "/settings",
+    "/billing",
     "/onboarding",
   ];
 
@@ -84,9 +77,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (!user) {
-    console.log(
-      "[Ordiva Proxy] NO USER → LOGIN"
-    );
 
     const url = request.nextUrl.clone();
 
@@ -105,20 +95,9 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
 
-  console.log(
-    "[Ordiva Proxy] PROFILE:",
-    profile
-  );
 
-  console.log(
-    "[Ordiva Proxy] PROFILE ERROR:",
-    profileError?.message ?? "NONE"
-  );
 
   if (profileError || !profile) {
-    console.log(
-      "[Ordiva Proxy] PROFILE MISSING/ERROR"
-    );
 
     if (pathname !== "/onboarding") {
       const url = request.nextUrl.clone();
@@ -142,15 +121,8 @@ export async function updateSession(request: NextRequest) {
     typeof profile.financial_goal === "string" &&
     profile.financial_goal.length > 0;
 
-  console.log(
-    "[Ordiva Proxy] ONBOARDING COMPLETE:",
-    onboardingComplete
-  );
 
   if (!onboardingComplete) {
-    console.log(
-      "[Ordiva Proxy] INCOMPLETE → ONBOARDING"
-    );
 
     if (pathname !== "/onboarding") {
       const url = request.nextUrl.clone();
@@ -165,9 +137,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (pathname === "/onboarding") {
-    console.log(
-      "[Ordiva Proxy] COMPLETE → DASHBOARD"
-    );
 
     const url = request.nextUrl.clone();
 
