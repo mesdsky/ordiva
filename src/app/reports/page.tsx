@@ -694,9 +694,9 @@ export default function ReportsPage() {
           <div className="pointer-events-none absolute -left-28 top-1/4 h-80 w-80 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
           <div className="pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full bg-gradient-to-bl from-white/10 to-transparent" />
 
-          <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-16 md:px-12 lg:px-16">
-            <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
-              <div className="max-w-3xl">
+          <div className="relative mx-auto w-full min-w-0 max-w-7xl px-4 pb-24 pt-16 sm:px-6 md:px-12 lg:px-16">
+            <div className="grid min-w-0 gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div className="min-w-0 max-w-3xl">
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
                   <span className="h-2 w-2 rounded-full bg-[#C8D8BE] shadow-[0_0_14px_rgba(200,216,190,0.8)]" />
                   Financial intelligence
@@ -718,7 +718,7 @@ export default function ReportsPage() {
                   )}
                 </div>
 
-                <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
+                <p className="mt-6 min-w-0 max-w-xl break-words text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
                   A clear monthly view of your income,
                   spending, savings, and the habits behind
                   your numbers.
@@ -726,9 +726,9 @@ export default function ReportsPage() {
               </div>
 
               {/* PERIOD SELECTOR */}
-              <div className="w-full max-w-sm lg:w-80">
-                <div className="rounded-[2rem] border border-white/35 bg-white/12 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md">
-                  <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-6">
+              <div className="w-full min-w-0 max-w-full lg:max-w-sm lg:w-80">
+                <div className="w-full min-w-0 max-w-full rounded-[2rem] border border-white/35 bg-white/12 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-md">
+                  <div className="w-full min-w-0 max-w-full rounded-[1.5rem] border border-white/20 bg-white/10 p-4 sm:p-6">
                     <label
                       htmlFor="report-month"
                       className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/50"
@@ -745,10 +745,10 @@ export default function ReportsPage() {
                           event.target.value
                         )
                       }
-                      className="mt-3 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
+                      className="box-border mt-3 block w-full min-w-0 max-w-full appearance-none overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
                     />
 
-                    <p className="mt-4 text-xs leading-5 text-white/45">
+                    <p className="mt-4 min-w-0 max-w-full break-words text-xs leading-5 text-white/45">
                       Reviewing your financial activity for{" "}
                       <span className="font-semibold text-[#C8D8BE]">
                         {monthLabel}
@@ -762,7 +762,7 @@ export default function ReportsPage() {
 
             {/* FLOATING SUMMARY */}
             {!loading && !currencyLoading && (
-              <div className="relative z-20 mt-10 grid gap-3 sm:grid-cols-3">
+              <div className="relative z-20 mt-10 grid min-w-0 gap-3 sm:grid-cols-3">
                 <MemoReportHeroStat
                   label="Income"
                   value={formatCurrency(totalIncome)}
@@ -789,10 +789,10 @@ export default function ReportsPage() {
         {/* =====================================================
             REPORT CONTENT
         ===================================================== */}
-        <section className="relative -mt-10 rounded-t-[2.75rem] bg-[linear-gradient(180deg,#F5F2E8_0%,#F8F6EF_48%,#F5F2E8_100%)] px-6 pb-20 pt-14 md:px-12 lg:px-16">
+        <section className="relative -mt-10 min-w-0 rounded-t-[2.75rem] bg-[linear-gradient(180deg,#F5F2E8_0%,#F8F6EF_48%,#F5F2E8_100%)] px-4 pb-20 pt-14 sm:px-6 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 rounded-full bg-gradient-to-br from-[#AFC1A4]/15 to-transparent" />
 
-          <div className="relative mx-auto max-w-7xl">
+          <div className="relative mx-auto w-full min-w-0 max-w-7xl">
             {errorMessage && (
               <div className="mb-8 rounded-2xl border border-red-100 bg-[#FDECEC] px-4 py-3 text-sm text-red-700 shadow-sm">
                 {errorMessage}
@@ -822,7 +822,7 @@ export default function ReportsPage() {
                     </h2>
                   </div>
 
-                  <p className="max-w-md text-sm leading-6 text-[#7B9685] sm:text-right">
+                  <p className="min-w-0 max-w-md break-words text-sm leading-6 text-[#7B9685] sm:text-right">
                     {transactions.length === 0
                       ? `No activity recorded for ${monthLabel}.`
                       : `A visual breakdown of your financial activity in ${monthLabel}.`}
@@ -1769,25 +1769,25 @@ function ReportHeroStat({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)] transition duration-300 hover:-translate-y-1 ${
+      className={`group relative min-w-0 max-w-full overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.4)] transition duration-300 hover:-translate-y-1 ${
         highlight
           ? "border-[#C8D8BE]/30 bg-[#AFC1A4]/15"
           : "border-white/20 bg-white/10"
       }`}
     >
-      <div className="relative flex items-center justify-between gap-4">
-        <div>
+      <div className="relative flex min-w-0 items-center justify-between gap-4">
+        <div className="min-w-0">
           <p className="text-[9px] uppercase tracking-[0.18em] text-white/45">
             {label}
           </p>
 
-          <p className="mt-2 text-lg font-bold text-white">
+          <p className="mt-2 break-words text-lg font-bold text-white">
             {value}
           </p>
         </div>
 
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${
             highlight
               ? "border-[#C8D8BE]/30 bg-[#C8D8BE]/10 text-[#C8D8BE]"
               : "border-white/15 bg-white/10 text-white"
