@@ -1235,14 +1235,14 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute -right-20 top-20 h-64 w-64 rounded-full bg-white/8 blur-3xl" />
 
         <div
-          className={`relative mx-auto max-w-7xl px-6 pb-28 pt-20 md:px-12 lg:px-16 ${
+          className={`relative mx-auto w-full min-w-0 max-w-7xl px-4 pb-28 pt-20 sm:px-6 md:px-12 lg:px-16 ${
             visible
               ? "translate-y-0 opacity-100"
               : "translate-y-4 opacity-0"
           } transition-[opacity,transform] duration-700`}
         >
-          <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="max-w-3xl">
+          <div className="grid min-w-0 gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="min-w-0 max-w-3xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75 backdrop-blur-sm">
                 <span className="h-2 w-2 rounded-full bg-[#C8D8BE]" />
                 Your financial overview
@@ -1256,7 +1256,7 @@ export default function DashboardPage() {
                 </span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
+              <p className="mt-6 min-w-0 max-w-xl break-words text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
                 Here&apos;s a clear picture of your
                 money, your progress, and what deserves
                 your attention today.
@@ -1273,7 +1273,7 @@ export default function DashboardPage() {
                   <span className="relative flex items-center justify-center gap-2">
                     + Add Transaction
                     <span className="transition-transform duration-200 group-hover:translate-x-1">
-                      →
+                      <ArrowIcon />
                     </span>
                   </span>
                 </button>
@@ -1289,28 +1289,28 @@ export default function DashboardPage() {
             </div>
 
             {/* BALANCE */}
-            <div className="w-full max-w-sm lg:w-80">
-              <div className="rounded-[2rem] border border-white/30 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.16)] backdrop-blur-md">
+            <div className="w-full min-w-0 max-w-full lg:max-w-sm lg:w-80">
+              <div className="w-full min-w-0 max-w-full rounded-[2rem] border border-white/30 bg-white/10 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.16)] backdrop-blur-md">
                 <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/55">
                         Total balance
                       </p>
 
-                      <p className="mt-3 text-3xl font-bold tracking-tight text-white">
+                      <p className="mt-3 break-words text-2xl font-bold tracking-tight text-white sm:text-3xl">
                         {formatCurrency(balance)}
                       </p>
                     </div>
 
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white">
-                      ↗
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white">
+                      <ArrowIcon direction="up-right" />
                     </div>
                   </div>
 
                   <div className="mt-7 h-px bg-white/15" />
 
-                  <div className="mt-5 flex items-end justify-between">
+                  <div className="mt-5 flex min-w-0 items-end justify-between gap-3">
                     <div>
                       <p className="text-[9px] text-white/50">
                         Savings rate
@@ -1321,12 +1321,12 @@ export default function DashboardPage() {
                       </p>
                     </div>
 
-                    <div className="text-right">
+                    <div className="min-w-0 text-right">
                       <p className="text-[9px] text-white/50">
                         Net this month
                       </p>
 
-                      <p className="mt-1 text-sm font-semibold text-white">
+                      <p className="mt-1 break-words text-sm font-semibold text-white">
                         {formatCurrency(income - expenses)}
                       </p>
                     </div>
@@ -1337,11 +1337,11 @@ export default function DashboardPage() {
           </div>
 
           {/* HERO STATS */}
-          <div className="relative z-20 mt-10 grid gap-3 sm:grid-cols-3">
+          <div className="relative z-20 mt-10 grid min-w-0 gap-3 sm:grid-cols-3">
             <HeroStat
               label="Income"
               value={formatCurrency(income)}
-              icon="↗"
+              icon="up-right"
               comparison={incomeChange}
               comparisonLabel="vs last month"
             />
@@ -1349,7 +1349,7 @@ export default function DashboardPage() {
             <HeroStat
               label="Expenses"
               value={formatCurrency(expenses)}
-              icon="↘"
+              icon="down-right"
               comparison={expenseChange}
               comparisonLabel="vs last month"
               inverseComparison
@@ -1373,10 +1373,10 @@ export default function DashboardPage() {
           MAIN
       ===================================================== */}
 
-      <section className="relative -mt-10 rounded-t-[2.75rem] bg-[linear-gradient(180deg,#F5F2E8_0%,#F8F6EF_48%,#F5F2E8_100%)] px-6 pb-20 pt-14 md:px-12 lg:px-16">
+      <section className="relative -mt-10 min-w-0 rounded-t-[2.75rem] bg-[linear-gradient(180deg,#F5F2E8_0%,#F8F6EF_48%,#F5F2E8_100%)] px-4 pb-20 pt-14 sm:px-6 md:px-12 lg:px-16">
         <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 rounded-full bg-[#AFC1A4]/10 blur-3xl" />
 
-        <div className="relative mx-auto max-w-7xl">
+        <div className="relative mx-auto w-full min-w-0 max-w-7xl">
           {/* HEADER */}
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -1389,14 +1389,14 @@ export default function DashboardPage() {
               </h2>
             </div>
 
-            <p className="max-w-md text-sm leading-6 text-[#7B9685] sm:text-right">
+            <p className="min-w-0 max-w-md break-words text-sm leading-6 text-[#7B9685] sm:text-right">
               Everything important, organized in one
               calm and simple overview.
             </p>
           </div>
 
           {/* CASH FLOW + GOAL */}
-          <div className="grid gap-6 lg:grid-cols-[1.45fr_0.8fr]">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[1.45fr_0.8fr]">
             <GlassPanel className="p-5 md:p-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -1443,8 +1443,8 @@ export default function DashboardPage() {
                 <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/8 blur-3xl" />
 
                 <div className="relative flex h-full flex-col">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
                         Financial goal
                       </p>
@@ -1459,9 +1459,9 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => router.push("/goals")}
-                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
                     >
-                      →
+                      <ArrowIcon />
                     </button>
                   </div>
 
@@ -1487,7 +1487,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="mt-5 rounded-2xl border border-white/10 bg-white/10 p-4">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start justify-between gap-4">
                           <div className="min-w-0">
                             <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/40">
                               Goal intelligence
@@ -1565,9 +1565,9 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => router.push("/goals")}
-                        className="mt-6 rounded-full bg-[#F5F2E8] px-5 py-3 text-sm font-semibold text-[#214F43] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
+                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F5F2E8] px-5 py-3 text-sm font-semibold text-[#214F43] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
                       >
-                        Create Goal →
+                        Create Goal <ArrowIcon />
                       </button>
                     </div>
                   )}
@@ -1602,7 +1602,7 @@ export default function DashboardPage() {
                 >
                   Manage Budget
                   <span className="transition-transform duration-200 group-hover:translate-x-1">
-                    →
+                    <ArrowIcon />
                   </span>
                 </button>
               </div>
@@ -1694,7 +1694,7 @@ export default function DashboardPage() {
                           <p className="text-sm leading-6 text-[#5F7168]">
                             {overBudgetCount > 0 ? `${overBudgetCount} budget${overBudgetCount > 1 ? "s are" : " is"} already over the limit.` : nearLimitCount > 0 ? `${nearLimitCount} budget${nearLimitCount > 1 ? "s are" : " is"} getting close to the limit.` : "Your budgets are currently on track."}
                           </p>
-                          <div className="rounded-2xl bg-white/80 px-4 py-3 sm:min-w-[190px]">
+                          <div className="w-full max-w-full rounded-2xl bg-white/80 px-4 py-3 sm:w-auto sm:min-w-[190px]">
                             <p className="text-xs text-[#7B9685]">Most watched</p>
                             <div className="mt-1 flex items-center justify-between gap-4">
                               <p className="max-w-[130px] truncate text-sm font-semibold text-[#214F43]">{highestBudgetRisk.name}</p>
@@ -1760,7 +1760,7 @@ export default function DashboardPage() {
               </div>
 
               {upcomingMoney.length === 0 ? (
-                <div className="mt-7 flex min-h-36 items-center justify-center border-y border-[#DDE6D7]/80 px-6 py-8 text-center">
+                <div className="mt-7 flex min-h-36 min-w-0 items-center justify-center border-y border-[#DDE6D7]/80 px-4 py-8 text-center sm:px-6">
                   <div>
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8EEDB] text-lg font-semibold text-[#214F43]">
                       ◷
@@ -1795,7 +1795,7 @@ export default function DashboardPage() {
                         onClick={() => router.push(item.route)}
                         className="group rounded-[1.5rem] border border-[#DDE6D7] bg-white/45 p-5 text-left transition-[transform,background-color] duration-200 hover:-translate-y-0.5 hover:bg-white/70"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                           <div className="flex min-w-0 items-start gap-3">
                             <div
                               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${
@@ -1807,10 +1807,10 @@ export default function DashboardPage() {
                               }`}
                             >
                               {isIncoming
-                                ? "↗"
+                                ? <ArrowIcon direction="up-right" />
                                 : isGoal
                                 ? "◇"
-                                : "↘"}
+                                : <ArrowIcon direction="down-right" />}
                             </div>
 
                             <div className="min-w-0">
@@ -1838,7 +1838,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
 
-                        <div className="mt-5 flex items-end justify-between gap-4">
+                        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                           <div>
                             <p className="text-[9px] uppercase tracking-[0.16em] text-[#7B9685]">
                               {isIncoming
@@ -1861,8 +1861,8 @@ export default function DashboardPage() {
                             </p>
                           </div>
 
-                          <span className="text-xs font-semibold text-[#214F43] transition-transform duration-200 group-hover:translate-x-1">
-                            View →
+                          <span className="inline-flex items-center gap-1 self-start text-xs font-semibold text-[#214F43] transition-transform duration-200 group-hover:translate-x-1 sm:self-auto">
+                            View <ArrowIcon className="h-3.5 w-3.5" />
                           </span>
                         </div>
                       </button>
@@ -1877,8 +1877,8 @@ export default function DashboardPage() {
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {/* SPENDING */}
             <GlassPanel className="p-5 md:p-7">
-              <div className="flex items-start justify-between">
-                <div>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
                     Spending
                   </p>
@@ -1893,9 +1893,9 @@ export default function DashboardPage() {
                   onClick={() =>
                     router.push("/transactions")
                   }
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#DDE6D7] bg-white/60 text-[#214F43] transition-colors duration-200 hover:bg-white"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#DDE6D7] bg-white/60 text-[#214F43] transition-colors duration-200 hover:bg-white"
                 >
-                  →
+                  <ArrowIcon />
                 </button>
               </div>
 
@@ -1996,7 +1996,7 @@ export default function DashboardPage() {
                       onClick={() => router.push("/transactions")}
                       className="mt-6 text-xs font-semibold text-[#214F43] transition-colors duration-200 hover:text-[#173C34]"
                     >
-                      View all {categorySpending.length} categories →
+                      View all {categorySpending.length} categories <ArrowIcon className="ml-1 inline h-3.5 w-3.5 align-[-0.15em]" />
                     </button>
                   )}
                 </>
@@ -2026,9 +2026,9 @@ export default function DashboardPage() {
                       onClick={() =>
                         router.push("/subscriptions")
                       }
-                      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
                     >
-                      →
+                      <ArrowIcon />
                     </button>
                   </div>
 
@@ -2056,9 +2056,9 @@ export default function DashboardPage() {
                         Next payment
                       </p>
 
-                      <div className="mt-3 flex items-end justify-between gap-4">
-                        <div>
-                          <p className="text-lg font-bold text-white">
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="break-words text-lg font-bold text-white">
                             {
                               subscriptionSummary
                                 .nextPayment.name
@@ -2074,7 +2074,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
 
-                        <p className="text-lg font-bold text-[#C8D8BE]">
+                        <p className="shrink-0 break-words text-lg font-bold text-[#C8D8BE]">
                           {formatCurrency(
                             subscriptionSummary
                               .nextPayment.amount
@@ -2140,9 +2140,9 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/debts")}
-                  className="w-fit rounded-full border border-[#DDE6D7] bg-white/60 px-4 py-2.5 text-xs font-semibold text-[#214F43] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
+                  className="inline-flex w-fit items-center rounded-full border border-[#DDE6D7] bg-white/60 px-4 py-2.5 text-xs font-semibold text-[#214F43] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
                 >
-                  Manage Debts →
+                  Manage Debts <ArrowIcon className="ml-1 inline h-3.5 w-3.5 align-[-0.15em]" />
                 </button>
               </div>
 
@@ -2179,13 +2179,13 @@ export default function DashboardPage() {
 
               {hasDebts && debtSummary.nextDue && (
                 <div className="mt-6 border-y border-[#DDE6D7] bg-[#E8EEDB]/35 px-1 py-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                  <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7B9685]">
                         Next due
                       </p>
 
-                      <p className="mt-2 text-lg font-bold">
+                      <p className="mt-2 break-words text-lg font-bold">
                         {debtSummary.nextDue.name}
                       </p>
 
@@ -2285,7 +2285,7 @@ export default function DashboardPage() {
                       >
                         {action.actionLabel}
                         <span className="transition-transform duration-200 group-hover:translate-x-1">
-                          →
+                          <ArrowIcon />
                         </span>
                       </button>
                     </div>
@@ -2318,7 +2318,7 @@ export default function DashboardPage() {
             <div className="mt-5">
               {isPremium ? (
                 <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-                  <div className="rounded-[2rem] border border-[#DDE6D7] bg-white/55 p-6 shadow-[0_20px_55px_rgba(23,60,52,0.05)] backdrop-blur-sm md:p-7">
+                  <div className="min-w-0 max-w-full rounded-[2rem] border border-[#DDE6D7] bg-white/55 p-6 shadow-[0_20px_55px_rgba(23,60,52,0.05)] backdrop-blur-sm md:p-7">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
@@ -2361,12 +2361,12 @@ export default function DashboardPage() {
                     >
                       Open Premium Reports
                       <span className="transition-transform group-hover:translate-x-1">
-                        →
+                        <ArrowIcon />
                       </span>
                     </button>
                   </div>
 
-                  <div className="relative overflow-hidden rounded-[2rem] bg-[#214F43] p-7 text-white shadow-[0_25px_70px_rgba(33,79,67,0.12)]">
+                  <div className="relative min-w-0 max-w-full overflow-hidden rounded-[2rem] bg-[#214F43] p-7 text-white shadow-[0_25px_70px_rgba(33,79,67,0.12)]">
                     <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
 
                     <div className="relative">
@@ -2411,8 +2411,8 @@ export default function DashboardPage() {
           {/* RECENT TRANSACTIONS */}
           <div className="mt-6">
             <GlassPanel className="p-5 md:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">
                     Activity
                   </p>
@@ -2431,11 +2431,11 @@ export default function DashboardPage() {
                   onClick={() =>
                     router.push("/transactions")
                   }
-                  className="group flex shrink-0 items-center gap-2 text-xs font-semibold text-[#214F43]"
+                  className="group inline-flex shrink-0 items-center gap-2 self-start text-xs font-semibold text-[#214F43] sm:self-auto"
                 >
                   View all
                   <span className="transition-transform duration-200 group-hover:translate-x-1">
-                    →
+                    <ArrowIcon />
                   </span>
                 </button>
               </div>
@@ -2472,8 +2472,8 @@ export default function DashboardPage() {
                             }`}
                           >
                             {transaction.type === "income"
-                              ? "↗"
-                              : "↘"}
+                              ? <ArrowIcon direction="up-right" />
+                              : <ArrowIcon direction="down-right" />}
                           </div>
 
                           <div className="min-w-0">
@@ -2496,7 +2496,7 @@ export default function DashboardPage() {
                         </div>
 
                         <p
-                          className={`shrink-0 text-base font-bold ${
+                          className={`max-w-full shrink-0 break-words text-base font-bold ${
                             transaction.type === "income"
                               ? "text-[#214F43]"
                               : "text-[#173C34]"
@@ -2529,7 +2529,7 @@ export default function DashboardPage() {
 
             <div className="absolute inset-0 bg-[#173C34]/65" />
 
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="relative flex min-w-0 flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#C8D8BE]">
                   Keep moving forward
@@ -2551,8 +2551,8 @@ export default function DashboardPage() {
                 className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white/20"
               >
                 Open Reports
-                <span className="ml-2 inline-block transition-transform duration-200 group-hover:translate-x-1">
-                  →
+                <span className="ml-2 inline-flex align-middle transition-transform duration-200 group-hover:translate-x-1">
+                  <ArrowIcon />
                 </span>
               </button>
             </div>
@@ -2599,6 +2599,58 @@ export default function DashboardPage() {
 /* =========================================================
    UI COMPONENTS
 ========================================================= */
+
+type ArrowDirection = "up-right" | "down-right" | "right" | "up" | "down";
+
+function ArrowIcon({
+  direction = "right",
+  className = "h-4 w-4",
+  strokeWidth = 1.8,
+}: {
+  direction?: ArrowDirection;
+  className?: string;
+  strokeWidth?: number;
+}) {
+  const paths: Record<ArrowDirection, string> = {
+    "right": "M5 12h14 M13 6l6 6-6 6",
+    "up-right": "M7 17L17 7 M8 7h9v9",
+    "down-right": "M7 7l10 10 M8 17h9V8",
+    "up": "M12 19V5 M6 11l6-6 6 6",
+    "down": "M12 5v14 M6 13l6 6 6-6",
+  };
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d={paths[direction]}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+function DashboardGlyph({
+  glyph,
+  className = "h-4 w-4",
+}: {
+  glyph: string;
+  className?: string;
+}) {
+  if (glyph === "up-right") return <ArrowIcon direction="up-right" className={className} />;
+  if (glyph === "down-right") return <ArrowIcon direction="down-right" className={className} />;
+  if (glyph === "right") return <ArrowIcon direction="right" className={className} />;
+
+  return <span aria-hidden="true">{glyph}</span>;
+}
 
 const DashboardCashFlowChart = memo(function DashboardCashFlowChart({
   data,
@@ -2710,7 +2762,7 @@ const PremiumMiniMetric = memo(function PremiumMiniMetric({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2]/75 p-4">
+    <div className="min-w-0 max-w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2]/75 p-4">
       <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7B9685]">
         {label}
       </p>
@@ -2732,7 +2784,7 @@ function GlassPanel({
 }) {
   return (
     <div
-      className={`relative ${
+      className={`relative min-w-0 max-w-full ${
         green
           ? "overflow-hidden rounded-[2rem] border border-white/20 bg-[#214F43] shadow-[0_20px_50px_rgba(33,79,67,0.12)]"
           : "rounded-[2rem] border border-[#DDE6D7] bg-white/40 shadow-[0_12px_35px_rgba(23,60,52,0.045)]"
@@ -2762,19 +2814,19 @@ const HeroStat = memo(function HeroStat({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_14px_35px_rgba(0,0,0,0.10)] transition-transform duration-200 hover:-translate-y-0.5 ${
+      className={`group relative min-w-0 max-w-full overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_14px_35px_rgba(0,0,0,0.10)] transition-transform duration-200 hover:-translate-y-0.5 ${
         highlight
           ? "border-[#C8D8BE]/30 bg-[#AFC1A4]/15"
           : "border-white/20 bg-white/10"
       }`}
     >
-      <div className="relative flex items-center justify-between gap-4">
-        <div>
+      <div className="relative flex min-w-0 items-center justify-between gap-4">
+        <div className="min-w-0">
           <p className="text-[9px] uppercase tracking-[0.18em] text-white/45">
             {label}
           </p>
 
-          <p className="mt-2 text-lg font-bold text-white">
+          <p className="mt-2 break-words text-lg font-bold text-white">
             {value}
           </p>
 
@@ -2797,7 +2849,7 @@ const HeroStat = memo(function HeroStat({
                         : "text-white/70"
                     }
                   >
-                    {comparison > 0 ? "↑" : "↓"}{" "}
+                    {comparison > 0 ? <ArrowIcon direction="up" className="inline h-3 w-3 align-[-0.1em]" /> : <ArrowIcon direction="down" className="inline h-3 w-3 align-[-0.1em]" />}{" "}
                     {Math.abs(comparison).toFixed(1)}%
                   </span>{" "}
                   {comparisonLabel}
@@ -2808,13 +2860,13 @@ const HeroStat = memo(function HeroStat({
         </div>
 
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${
             highlight
               ? "border-[#C8D8BE]/30 bg-[#C8D8BE]/10 text-[#C8D8BE]"
               : "border-white/15 bg-white/10 text-white"
           }`}
         >
-          {icon}
+          <DashboardGlyph glyph={icon} className="h-5 w-5" />
         </div>
       </div>
     </div>
@@ -2848,13 +2900,13 @@ const MetricCard = memo(function MetricCard({
   danger?: boolean;
 }) {
   return (
-    <div className="border-t border-[#DDE6D7] py-4">
+    <div className="min-w-0 border-t border-[#DDE6D7] py-4">
       <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7B9685]">
         {label}
       </p>
 
       <p
-        className={`mt-2 text-xl font-bold ${
+        className={`mt-2 break-words text-xl font-bold ${
           danger ? "text-red-700" : "text-[#173C34]"
         }`}
       >
@@ -2872,7 +2924,7 @@ const DarkMetric = memo(function DarkMetric({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/10 p-5">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/10 p-5">
       <p className="text-[9px] uppercase tracking-[0.16em] text-white/40">
         {label}
       </p>
@@ -2898,7 +2950,7 @@ function EmptyState({
   onClick: () => void;
 }) {
   return (
-    <div className="mt-7 flex min-h-36 items-center justify-center border-y border-[#DDE6D7]/80 px-6 py-8 text-center">
+    <div className="mt-7 flex min-h-36 min-w-0 items-center justify-center border-y border-[#DDE6D7]/80 px-4 py-8 text-center sm:px-6">
       <div>
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8EEDB] text-lg font-semibold text-[#214F43]">
           {icon}
