@@ -132,7 +132,7 @@ export default function Home() {
           NAVBAR
       ========================================================= */}
       <nav className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/45 bg-[#F5F2E8]/55 px-4 py-2.5 shadow-[0_12px_40px_rgba(23,60,52,0.08)] backdrop-blur-2xl sm:px-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/45 bg-[#F5F2E8]/55 px-2.5 py-2 shadow-[0_12px_40px_rgba(23,60,52,0.08)] backdrop-blur-md sm:px-5 sm:py-2.5">
           {/* ORIGINAL ORDIVA LOGO — DO NOT CHANGE */}
           <button
             type="button"
@@ -143,7 +143,7 @@ export default function Home() {
             <img
               src="/ordiva-navbar.png"
               alt="Ordiva"
-              className="h-12 w-auto object-contain transition duration-300 group-hover:scale-[1.03]"
+              className="h-10 w-auto object-contain sm:h-12 transition duration-300 group-hover:scale-[1.03]"
             />
           </button>
 
@@ -172,11 +172,11 @@ export default function Home() {
           </div>
 
           {/* Glass actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <button
               type="button"
               onClick={() => router.push("/login")}
-              className="rounded-full border border-white/50 bg-white/25 px-4 py-2.5 text-sm font-semibold text-[#173C34] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-white/45"
+              className="rounded-full border border-white/50 bg-white/25 px-2.5 py-2 text-xs font-semibold text-[#173C34] whitespace-nowrap sm:px-4 sm:py-2.5 sm:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] transition duration-300 hover:-translate-y-0.5 hover:bg-white/45"
             >
               Login
             </button>
@@ -184,10 +184,10 @@ export default function Home() {
             <button
               type="button"
               onClick={() => router.push("/register")}
-              className="group relative overflow-hidden rounded-full border border-white/35 bg-[#214F43]/90 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(33,79,67,0.22),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-[#173C34]"
+              className="group relative overflow-hidden rounded-full border border-white/35 bg-[#214F43]/90 px-3 py-2 text-xs font-semibold text-white whitespace-nowrap sm:px-5 sm:py-2.5 sm:text-sm shadow-[0_10px_30px_rgba(33,79,67,0.22),inset_0_1px_0_rgba(255,255,255,0.25)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#173C34]"
             >
               <span className="absolute inset-x-0 top-0 h-px bg-white/70" />
-              <span className="relative flex items-center gap-2">
+              <span className="relative flex items-center gap-2 whitespace-nowrap">
                 Get Started
                 <span className="transition-transform duration-300 group-hover:translate-x-1">
                   →
@@ -216,10 +216,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#173C34]/45 via-transparent to-[#173C34]/10" />
 
         {/* Ambient glass blobs */}
-        <div className="pointer-events-none absolute -left-32 top-1/4 h-80 w-80 rounded-full bg-[#AFC1A4]/20 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-1/3 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 top-1/4 h-80 w-80 rounded-full bg-gradient-to-br from-[#AFC1A4]/20 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-1/3 h-96 w-96 rounded-full bg-gradient-to-bl from-white/10 to-transparent" />
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pb-20 pt-36 md:px-12 lg:grid-cols-[0.95fr_1.05fr] lg:px-16">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pb-16 pt-32 sm:gap-12 sm:px-6 sm:pb-20 sm:pt-36 md:px-12 lg:grid-cols-[0.95fr_1.05fr] lg:px-16">
           {/* LEFT CONTENT */}
           <div
             className={`max-w-2xl transition-all duration-1000 ${
@@ -229,12 +229,12 @@ export default function Home() {
             }`}
           >
             {/* Eyebrow glass */}
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
               <span className="h-2 w-2 rounded-full bg-[#AFC1A4] shadow-[0_0_12px_rgba(175,193,164,0.8)]" />
               A smarter way to manage your money
             </div>
 
-            <h1 className="text-5xl font-semibold leading-[0.96] tracking-[-0.045em] text-white sm:text-6xl md:text-7xl lg:text-[5.6rem]">
+            <h1 className="text-[2.75rem] font-semibold leading-[0.98] tracking-[-0.045em] sm:text-5xl text-white sm:text-6xl md:text-7xl lg:text-[5.6rem]">
               Plan Smarter.
               <br />
               <span className="text-[#C8D8BE]">
@@ -254,7 +254,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => router.push("/register")}
-                className="group relative overflow-hidden rounded-full border border-white/30 bg-[#214F43]/90 px-7 py-4 font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-[#173C34]"
+                className="group relative overflow-hidden rounded-full border border-white/30 bg-[#214F43]/90 px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)] transition duration-300 hover:-translate-y-1 hover:bg-[#173C34] sm:px-7 sm:py-4"
               >
                 <span className="absolute inset-x-0 top-0 h-px bg-white/80" />
                 <span className="absolute -left-20 top-0 h-full w-20 -skew-x-12 bg-white/15 transition-transform duration-700 group-hover:translate-x-[420px]" />
@@ -269,7 +269,7 @@ export default function Home() {
 
               <a
                 href="#overview"
-                className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/12 px-7 py-4 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/20"
+                className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/12 px-5 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition duration-300 hover:-translate-y-1 hover:bg-white/20 sm:px-7 sm:py-4"
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-white/15 text-[10px]">
                   ↓
@@ -306,7 +306,7 @@ export default function Home() {
             }`}
           >
             {/* Floating badge */}
-            <div className="absolute -right-3 -top-7 z-30 hidden rounded-2xl border border-white/35 bg-white/15 px-4 py-3 shadow-[0_18px_45px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-2xl sm:block">
+            <div className="absolute -right-3 -top-7 z-30 hidden rounded-2xl border border-white/35 bg-white/15 px-4 py-3 shadow-[0_18px_45px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.4)] sm:block">
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/60">
                 Savings rate
               </p>
@@ -317,7 +317,7 @@ export default function Home() {
             </div>
 
             {/* Main glass frame */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/35 bg-white/18 p-2 shadow-[0_35px_100px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-2xl">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/35 bg-white/18 p-2 shadow-[0_35px_100px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md">
               <div className="overflow-hidden rounded-[1.55rem] border border-white/50 bg-[#F5F2E8]/90 shadow-[0_15px_50px_rgba(23,60,52,0.15)]">
                 {/* Dashboard top bar */}
                 <div className="flex items-center justify-between border-b border-[#DDE6D7] px-5 py-4 sm:px-6">
@@ -461,7 +461,7 @@ export default function Home() {
             </div>
 
             {/* Floating insight */}
-            <div className="absolute -bottom-6 -left-5 hidden rounded-2xl border border-white/35 bg-[#F5F2E8]/80 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-2xl sm:block">
+            <div className="absolute -bottom-6 -left-5 hidden rounded-2xl border border-white/35 bg-[#F5F2E8]/80 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.65)] sm:block">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#214F43] text-sm text-white shadow-lg">
                   ↗
@@ -496,11 +496,11 @@ export default function Home() {
       ========================================================= */}
       <section
         id="features"
-        className="relative overflow-hidden px-6 py-24 md:px-12 lg:px-16"
+        className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-12 lg:px-16"
       >
         {/* Soft photographic atmosphere */}
-        <div className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-[#AFC1A4]/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-[#E8EEDB] blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-gradient-to-br from-[#AFC1A4]/20 to-transparent" />
+        <div className="pointer-events-none absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-gradient-to-br from-[#E8EEDB] to-transparent" />
 
         <div className="relative mx-auto max-w-7xl">
           <div className="mb-14 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
@@ -509,7 +509,7 @@ export default function Home() {
                 Everything you need
               </p>
 
-              <h2 className="text-4xl font-semibold tracking-[-0.035em] md:text-5xl">
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] sm:text-4xl md:text-5xl">
                 Manage your money
                 <br />
                 with clarity.
@@ -524,7 +524,7 @@ export default function Home() {
 
             <a
               href="#overview"
-              className="group flex w-fit items-center gap-3 rounded-full border border-[#BFD0C3] bg-white/50 px-5 py-3 text-sm font-semibold text-[#214F43] shadow-[inset_0_1px_0_white] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-white/80"
+              className="group flex w-fit items-center gap-3 rounded-full border border-[#BFD0C3] bg-white/50 px-5 py-3 text-sm font-semibold text-[#214F43] shadow-[inset_0_1px_0_white] transition duration-300 hover:-translate-y-0.5 hover:bg-white/80"
             >
               Explore all features
               <span className="transition-transform group-hover:translate-x-1">
@@ -591,7 +591,7 @@ export default function Home() {
       ========================================================= */}
       <section
         id="how-it-works"
-        className="relative overflow-hidden px-6 py-24 md:px-12 lg:px-16"
+        className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-12 lg:px-16"
       >
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -654,9 +654,9 @@ export default function Home() {
       ========================================================= */}
       <section
         id="overview"
-        className="relative overflow-hidden px-6 py-24 md:px-12 lg:px-16"
+        className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-12 lg:px-16"
       >
-        <div className="pointer-events-none absolute -right-40 top-20 h-[500px] w-[500px] rounded-full bg-[#AFC1A4]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 top-20 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-[#AFC1A4]/20 to-transparent" />
 
         <div className="relative mx-auto max-w-7xl">
           <div className="grid gap-14 lg:grid-cols-[0.7fr_1.3fr] lg:items-center">
@@ -666,7 +666,7 @@ export default function Home() {
                 See the big picture
               </p>
 
-              <h2 className="text-4xl font-semibold tracking-[-0.035em] md:text-5xl">
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] sm:text-4xl md:text-5xl">
                 One dashboard.
                 <br />
                 Complete clarity.
@@ -692,7 +692,7 @@ export default function Home() {
             </div>
 
             {/* Overview glass dashboard */}
-            <div className="relative rounded-[2rem] border border-white/60 bg-white/35 p-2 shadow-[0_30px_90px_rgba(23,60,52,0.13),inset_0_1px_0_white] backdrop-blur-2xl">
+            <div className="relative rounded-[2rem] border border-white/60 bg-white/35 p-2 shadow-[0_30px_90px_rgba(23,60,52,0.13),inset_0_1px_0_white] backdrop-blur-md">
               <div className="rounded-[1.55rem] border border-[#DDE6D7] bg-[#F5F2E8]/90 p-5 sm:p-7">
                 <div className="flex items-center justify-between">
                   <div>
@@ -862,7 +862,7 @@ export default function Home() {
       {/* =========================================================
           FINAL CTA — PHOTO + GLASS
       ========================================================= */}
-      <section className="relative overflow-hidden px-6 py-24 md:px-12 lg:px-16">
+      <section className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-12 lg:px-16">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -873,7 +873,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[#173C34]/70" />
 
         <div className="relative mx-auto max-w-7xl">
-          <div className="overflow-hidden rounded-[2rem] border border-white/25 bg-white/10 px-7 py-16 shadow-[0_30px_90px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl md:px-16 md:py-20">
+          <div className="overflow-hidden rounded-[2rem] border border-white/25 bg-white/10 px-7 py-16 shadow-[0_30px_90px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.35)] md:px-16 md:py-20">
             <div className="mx-auto max-w-3xl text-center">
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-[#C8D8BE]">
                 Start your journey
@@ -905,7 +905,7 @@ export default function Home() {
 
                 <a
                   href="#features"
-                  className="rounded-full border border-white/30 bg-white/10 px-7 py-4 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/20"
+                  className="rounded-full border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition duration-300 hover:-translate-y-1 hover:bg-white/20"
                 >
                   Learn More
                 </a>
@@ -1050,23 +1050,25 @@ function FeatureCard({
       aria-label={`Preview ${title}`}
       aria-haspopup="dialog"
       data-feature-key={featureKey}
-      className={`group relative block w-full overflow-hidden rounded-[1.7rem] p-7 text-left transition-all duration-500 hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#214F43] focus-visible:ring-offset-4 ${
+      className={`group relative block w-full overflow-hidden rounded-[1.5rem] p-5 text-left sm:rounded-[1.7rem] sm:p-7 transition-all duration-500 hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#214F43] focus-visible:ring-offset-4 ${
         featured
           ? "bg-[#214F43] text-white shadow-[0_25px_60px_rgba(33,79,67,0.16)]"
-          : "border border-[#DDE6D7] bg-white/55 shadow-[0_15px_40px_rgba(23,60,52,0.04)] backdrop-blur-xl hover:border-[#BFD0C3] hover:bg-white/75 hover:shadow-[0_25px_60px_rgba(23,60,52,0.08)]"
+          : "border border-[#DDE6D7] bg-white/55 shadow-[0_15px_40px_rgba(23,60,52,0.04)] hover:border-[#BFD0C3] hover:bg-white/75 hover:shadow-[0_25px_60px_rgba(23,60,52,0.08)]"
       }`}
     >
       {/* Gloss */}
       <div
-        className={`pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full blur-3xl ${
-          featured ? "bg-[#AFC1A4]/20" : "bg-[#AFC1A4]/15"
+        className={`pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gradient-to-br to-transparent ${
+          featured
+            ? "from-[#AFC1A4]/20"
+            : "from-[#AFC1A4]/15"
         }`}
       />
 
       <div
-        className={`relative mb-7 flex h-12 w-12 items-center justify-center rounded-2xl text-lg shadow-sm transition duration-300 group-hover:scale-105 group-hover:rotate-2 ${
+        className={`relative mb-5 flex h-11 w-11 sm:mb-7 sm:h-12 sm:w-12 items-center justify-center rounded-2xl text-lg shadow-sm transition duration-300 group-hover:scale-105 group-hover:rotate-2 ${
           featured
-            ? "border border-white/20 bg-white/15 text-white backdrop-blur-xl"
+            ? "border border-white/20 bg-white/15 text-white"
             : "bg-[#E8EEDB] text-[#214F43]"
         }`}
       >
@@ -1074,7 +1076,7 @@ function FeatureCard({
       </div>
 
       <h3
-        className={`relative text-xl font-semibold ${
+        className={`relative text-lg font-semibold sm:text-xl ${
           featured ? "text-white" : "text-[#173C34]"
         }`}
       >
@@ -1082,7 +1084,7 @@ function FeatureCard({
       </h3>
 
       <p
-        className={`relative mt-3 leading-7 ${
+        className={`relative mt-2.5 leading-6 sm:mt-3 sm:leading-7 ${
           featured ? "text-white/65" : "text-[#5F7168]"
         }`}
       >
@@ -1090,7 +1092,7 @@ function FeatureCard({
       </p>
 
       <div
-        className={`relative mt-7 flex translate-y-0 items-center gap-2 text-xs font-semibold opacity-100 transition-all duration-300 lg:translate-y-1 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 ${
+        className={`relative mt-5 flex translate-y-0 sm:mt-7 items-center gap-2 text-xs font-semibold opacity-100 transition-all duration-300 lg:translate-y-1 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 ${
           featured ? "text-[#C8D8BE]" : "text-[#214F43]"
         }`}
       >
@@ -1479,7 +1481,7 @@ function StepCard({
         className={`mb-6 flex h-14 w-14 items-center justify-center rounded-full text-sm font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.15)] ${
           active
             ? "border border-white/30 bg-white text-[#214F43]"
-            : "border border-white/20 bg-white/10 text-white backdrop-blur-xl"
+            : "border border-white/20 bg-white/10 text-white"
         }`}
       >
         {number}
