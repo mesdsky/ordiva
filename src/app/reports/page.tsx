@@ -766,13 +766,13 @@ export default function ReportsPage() {
                 <MemoReportHeroStat
                   label="Income"
                   value={formatCurrency(totalIncome)}
-                  icon="↗"
+                  icon="up-right"
                 />
 
                 <MemoReportHeroStat
                   label="Expenses"
                   value={formatCurrency(totalExpense)}
-                  icon="↘"
+                  icon="down-right"
                 />
 
                 <MemoReportHeroStat
@@ -1475,7 +1475,7 @@ export default function ReportsPage() {
                       >
                         Review transactions
                         <span className="transition-transform group-hover:translate-x-1">
-                          →
+                          <ReportArrowIcon />
                         </span>
                       </button>
                     </div>
@@ -1711,8 +1711,8 @@ export default function ReportsPage() {
                         className="group shrink-0 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition hover:-translate-y-1 hover:bg-white/20"
                       >
                         + Add Transaction
-                        <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
-                          →
+                        <span className="ml-2 inline-flex align-middle transition-transform group-hover:translate-x-1">
+                          <ReportArrowIcon />
                         </span>
                       </button>
                     </div>
@@ -1730,9 +1730,9 @@ export default function ReportsPage() {
                     onClick={() =>
                       router.push("/dashboard")
                     }
-                    className="w-fit transition hover:text-[#214F43]"
+                    className="inline-flex w-fit items-center gap-1 transition hover:text-[#214F43]"
                   >
-                    Back to Dashboard →
+                    Back to Dashboard <ReportArrowIcon className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </>
@@ -1755,6 +1755,54 @@ export default function ReportsPage() {
 /* =============================================================
    HERO STAT
 ============================================================= */
+
+type ReportArrowDirection = "up-right" | "down-right" | "right";
+
+function ReportArrowIcon({
+  direction = "right",
+  className = "h-4 w-4",
+}: {
+  direction?: ReportArrowDirection;
+  className?: string;
+}) {
+  const paths: Record<ReportArrowDirection, string> = {
+    "right": "M5 12h14 M13 6l6 6-6 6",
+    "up-right": "M7 17L17 7 M8 7h9v9",
+    "down-right": "M7 7l10 10 M8 17h9V8",
+  };
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d={paths[direction]}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+      />
+    </svg>
+  );
+}
+
+function ReportGlyph({
+  glyph,
+  className = "h-4 w-4",
+}: {
+  glyph: string;
+  className?: string;
+}) {
+  if (glyph === "up-right") return <ReportArrowIcon direction="up-right" className={className} />;
+  if (glyph === "down-right") return <ReportArrowIcon direction="down-right" className={className} />;
+  if (glyph === "right") return <ReportArrowIcon direction="right" className={className} />;
+
+  return <span aria-hidden="true">{glyph}</span>;
+}
 
 function ReportHeroStat({
   label,
@@ -1793,7 +1841,7 @@ function ReportHeroStat({
               : "border-white/15 bg-white/10 text-white"
           }`}
         >
-          {icon}
+          <ReportGlyph glyph={icon} className="h-5 w-5" />
         </div>
       </div>
     </div>
@@ -2041,7 +2089,7 @@ function PremiumTeaser({
       </div>
 
       <span className="shrink-0 text-[#214F43] transition-transform group-hover:translate-x-1">
-        →
+        <ReportArrowIcon />
       </span>
     </button>
   );
