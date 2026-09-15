@@ -207,9 +207,9 @@ export default function Navigation() {
       />
 
       {/* Fixed floating navigation */}
-      <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-3 md:px-6 lg:px-8">
+      <header className="fixed left-0 right-0 top-0 z-50 px-2 pt-2 sm:px-4 sm:pt-3 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative flex min-h-[68px] items-center justify-between gap-3 overflow-visible rounded-[1.5rem] border border-white/70 bg-[#F5F2E8]/75 px-3 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md md:px-5">
+          <div className="relative flex min-h-[60px] items-center justify-between gap-1 overflow-visible rounded-[1.5rem] border border-white/70 bg-[#F5F2E8]/75 px-2 sm:min-h-[68px] sm:gap-3 sm:px-3 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md md:px-5">
 
             {/* Glass highlight */}
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/90" />
@@ -223,13 +223,13 @@ export default function Navigation() {
               onClick={() =>
                 navigateTo("/dashboard")
               }
-              className="group relative z-10 shrink-0 rounded-2xl px-2 py-1 transition duration-300 hover:bg-white/35"
+              className="group relative z-10 shrink-0 rounded-2xl px-1 py-1 sm:px-2 transition duration-300 hover:bg-white/35"
               aria-label="Go to dashboard"
             >
               <img
                 src="/ordiva-navbar.png"
                 alt="Ordiva"
-                className="h-16 w-auto object-contain transition duration-300 group-hover:scale-[1.02]"
+                className="h-12 w-auto object-contain sm:h-16 transition duration-300 group-hover:scale-[1.02]"
               />
             </button>
 
@@ -277,7 +277,7 @@ export default function Navigation() {
             {/* Mobile + tablet page menu */}
             <div
               ref={pageMenuRef}
-              className="relative z-[60] ml-auto xl:hidden"
+              className="relative z-[60] ml-auto shrink-0 xl:hidden"
             >
               <button
                 type="button"
@@ -285,7 +285,7 @@ export default function Navigation() {
                   setPageMenuOpen((current) => !current);
                   setProfileMenuOpen(false);
                 }}
-                className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 sm:h-11 sm:w-11 ${
                   pageMenuOpen
                     ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
                     : "border-white/80 bg-white/55 text-[#5F7168] shadow-[0_4px_15px_rgba(33,79,67,0.05)] hover:bg-white/80 hover:text-[#214F43]"
@@ -377,7 +377,7 @@ export default function Navigation() {
                   );
                   setPageMenuOpen(false);
                 }}
-                className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 sm:h-11 sm:w-11 ${
                   profileMenuOpen
                     ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
                     : "border-white/80 bg-white/55 text-[#5F7168] shadow-[0_4px_15px_rgba(33,79,67,0.05)] hover:bg-white/80 hover:text-[#214F43] hover:shadow-[0_8px_22px_rgba(33,79,67,0.10)]"
