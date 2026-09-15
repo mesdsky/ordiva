@@ -2010,13 +2010,13 @@ export default function DashboardPage() {
             >
               {hasSubscriptions ? (
                 <>
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                         Recurring
                       </p>
 
-                      <h3 className="mt-2 text-xl font-semibold text-white">
+                      <h3 className="mt-2 break-words text-xl font-semibold text-white">
                         Subscriptions.
                       </h3>
                     </div>
@@ -2032,7 +2032,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <div className="mt-8 grid grid-cols-2 gap-3">
+                  <div className="mt-8 grid min-w-0 grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                     <DarkMetric
                       label="Active"
                       value={String(
@@ -2051,7 +2051,7 @@ export default function DashboardPage() {
                   </div>
 
                   {subscriptionSummary.nextPayment && (
-                    <div className="mt-3 rounded-2xl border border-white/10 bg-white/10 p-5">
+                    <div className="mt-3 min-w-0 max-w-full rounded-2xl border border-white/10 bg-white/10 p-4 sm:p-5">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/40">
                         Next payment
                       </p>
@@ -2074,7 +2074,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
 
-                        <p className="shrink-0 break-words text-lg font-bold text-[#C8D8BE]">
+                        <p className="max-w-full shrink-0 break-all text-base font-bold leading-tight text-[#C8D8BE] sm:text-lg">
                           {formatCurrency(
                             subscriptionSummary
                               .nextPayment.amount
@@ -2082,7 +2082,7 @@ export default function DashboardPage() {
                         </p>
                       </div>
 
-                      <p className="mt-3 text-[10px] text-white/40">
+                      <p className="mt-3 break-words text-[10px] text-white/40">
                         {formatBillingCycle(
                           subscriptionSummary.nextPayment
                             .billing_cycle
@@ -2924,12 +2924,12 @@ const DarkMetric = memo(function DarkMetric({
   value: string;
 }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/10 p-5">
+    <div className="w-full min-w-0 max-w-full rounded-2xl border border-white/10 bg-white/10 p-4 sm:p-5">
       <p className="text-[9px] uppercase tracking-[0.16em] text-white/40">
         {label}
       </p>
 
-      <p className="mt-2 text-lg font-bold text-white">
+      <p className="mt-2 max-w-full break-all text-base font-bold leading-tight text-white sm:text-lg">
         {value}
       </p>
     </div>
