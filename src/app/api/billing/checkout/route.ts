@@ -28,12 +28,12 @@ function getGivenNames(user: { email?: string; user_metadata?: Record<string, un
 }
 
 function getSubscriptionAnchorDate() {
-  const now = new Date();
-  if (now.getUTCDate() > 28) {
-    now.setUTCDate(1);
-    now.setUTCMonth(now.getUTCMonth() + 1);
+  const anchor = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  if (anchor.getUTCDate() > 28) {
+    anchor.setUTCDate(1);
+    anchor.setUTCMonth(anchor.getUTCMonth() + 1);
   }
-  return now.toISOString();
+  return anchor.toISOString();
 }
 
 export async function POST(request: Request) {
@@ -71,7 +71,8 @@ export async function POST(request: Request) {
       country: "ID",
       locale: "id",
       customer: {
-        reference_id: user.id,
+        // Xendit requires a unique customer reference for each new test session.
+        reference_id: `cust-${order.id}`,
         type: "INDIVIDUAL",
         email: user.email,
         individual_detail: { given_names: getGivenNames(user) },
