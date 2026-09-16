@@ -59,7 +59,19 @@ export default function BillingPage() {
     loadBilling();
   }, [router]);
 
-  const activeEntitlement = useMemo(() => billing.entitlements.find((item) => item.status === "active" && (!item.ends_at || new Date(item.ends_at) > new Date())), [billing.entitlements]);
+  const activeEntitlement = useMemo(() => {
+    return [...billing.entitlements]
+      .filter((item) => String(item.status).toLowerCase() === "active")
+      .filter((item) => {
+        if (!item.ends_at) return true;
+        const endTime = new Date(item.ends_at).getTime();
+        return Number.isNaN(endTime) || endTime > Date.now();
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()
+      )[0] ?? null;
+  }, [billing.entitlements]);
   const subscription = billing.subscriptions[0] ?? null;
   const isPremium = plan === "premium";
 
