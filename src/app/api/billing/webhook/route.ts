@@ -18,10 +18,7 @@ function addMonths(date: Date, months: number) {
 export async function POST(request: Request) {
   try {
     if (!assertXenditWebhook(request)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const payload = (await request.json().catch(() => null)) as Record<
@@ -30,21 +27,34 @@ export async function POST(request: Request) {
     > | null;
 
     if (!payload) {
-      return NextResponse.json(
-        { error: "Invalid JSON" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const providerEventId = firstString(
-      request.headers.get("x-event-id"),
-      payload.event_id,
-      payload.id,
-      payload.payment_session_id,
-      payload.subscription_id
+    const eventName = firstString(
+      payload.event,
+      payload.type,
+      payload.data?.event
     );
 
-    // Xendit's "Test and Save" request can omit a business event ID.
+    // Payment Session webhooks put the session ID under data.payment_session_id.
+    // Keep the event name in the fallback key so completed and expired events
+    // for the same session remain distinct.
+    const providerEventId =
+      firstString(
+        request.headers.get("x-event-id"),
+        payload.event_id,
+        payload.id,
+        payload.payment_session_id,
+        payload.subscription_id,
+        payload.data?.payment_session_id,
+        payload.data?.subscription_id,
+        payload.data?.recurring_plan_id
+      ) ??
+      (eventName && payload.data?.reference_id
+        ? `${eventName}:${payload.data.reference_id}`
+        : null);
+
+    // Xendit's "Test and Save" request can omit business event data.
     // Acknowledge it without changing billing state.
     if (!providerEventId) {
       return NextResponse.json({
@@ -60,11 +70,7 @@ export async function POST(request: Request) {
       .from("billing_webhook_events")
       .insert({
         provider_event_id: providerEventId,
-        event_type: firstString(
-          payload.event,
-          payload.type,
-          payload.status
-        ),
+        event_type: eventName,
         payload,
       })
       .select("id")
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
     }
 
     const status = String(
-      payload.status ?? payload.data?.status ?? payload.event ?? ""
+      payload.status ?? payload.data?.status ?? eventName ?? ""
     ).toUpperCase();
     const paid = [
       "PAID",
@@ -144,6 +150,7 @@ export async function POST(request: Request) {
       const providerSubscriptionId = firstString(
         payload.subscription_id,
         payload.data?.subscription_id,
+        payload.data?.recurring_plan_id,
         payload.id
       );
 
@@ -195,7 +202,7 @@ export async function POST(request: Request) {
       .update({ processed_at: new Date().toISOString() })
       .eq("provider_event_id", providerEventId);
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true, processed: paid });
   } catch (error) {
     console.error("Billing webhook error", error);
     return NextResponse.json(
