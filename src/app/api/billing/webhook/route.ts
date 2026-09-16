@@ -3,10 +3,12 @@ import { assertXenditWebhook } from "@/lib/xendit";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 function firstString(...values: unknown[]) {
-  return values.find(
-    (value): value is string =>
-      typeof value === "string" && value.length > 0
-  ) ?? null;
+  return (
+    values.find(
+      (value): value is string =>
+        typeof value === "string" && value.length > 0
+    ) ?? null
+  );
 }
 
 function addMonths(date: Date, months: number) {
@@ -36,26 +38,21 @@ export async function POST(request: Request) {
       payload.data?.event
     );
 
-    // Payment Session webhooks put the session ID under data.payment_session_id.
-    // Keep the event name in the fallback key so completed and expired events
-    // for the same session remain distinct.
+    // Payment Session webhooks put the important fields under data.
+    const data = payload.data ?? {};
     const providerEventId =
       firstString(
         request.headers.get("x-event-id"),
         payload.event_id,
         payload.id,
-        payload.payment_session_id,
-        payload.subscription_id,
-        payload.data?.payment_session_id,
-        payload.data?.subscription_id,
-        payload.data?.recurring_plan_id
+        data.event_id,
+        data.id
       ) ??
-      (eventName && payload.data?.reference_id
-        ? `${eventName}:${payload.data.reference_id}`
-        : null);
+      (eventName && data.reference_id
+        ? `${eventName}:${data.reference_id}`
+        : firstString(data.payment_session_id, data.recurring_plan_id));
 
     // Xendit's "Test and Save" request can omit business event data.
-    // Acknowledge it without changing billing state.
     if (!providerEventId) {
       return NextResponse.json({
         received: true,
@@ -97,8 +94,8 @@ export async function POST(request: Request) {
       payload.reference_id,
       payload.external_id,
       payload.metadata?.order_id,
-      payload.data?.reference_id,
-      payload.data?.external_id
+      data.reference_id,
+      data.external_id
     );
 
     if (!referenceId) {
@@ -106,7 +103,7 @@ export async function POST(request: Request) {
     }
 
     const status = String(
-      payload.status ?? payload.data?.status ?? eventName ?? ""
+      payload.status ?? data.status ?? eventName ?? ""
     ).toUpperCase();
     const paid = [
       "PAID",
@@ -128,7 +125,9 @@ export async function POST(request: Request) {
       .eq("id", referenceId)
       .maybeSingle();
 
-    if (!order) return NextResponse.json({ received: true });
+    if (!order) {
+      return NextResponse.json({ received: true });
+    }
 
     if (failed) {
       await supabase
@@ -142,17 +141,13 @@ export async function POST(request: Request) {
     if (paid) {
       const now = new Date();
       const endsAt =
-        order.plan_id === "three-months"
+        order.plan_id === "monthly"
+          ? addMonths(now, 1)
+          : order.plan_id === "three-months"
           ? addMonths(now, 3)
           : order.plan_id === "yearly"
           ? addMonths(now, 12)
           : null;
-      const providerSubscriptionId = firstString(
-        payload.subscription_id,
-        payload.data?.subscription_id,
-        payload.data?.recurring_plan_id,
-        payload.id
-      );
 
       await supabase
         .from("billing_orders")
@@ -170,26 +165,11 @@ export async function POST(request: Request) {
           status: "active",
           starts_at: now.toISOString(),
           ends_at: endsAt,
-          provider_subscription_id: providerSubscriptionId,
+          // One-time plans must not create a recurring subscription record.
+          provider_subscription_id: null,
         },
         { onConflict: "order_id" }
       );
-
-      if (order.plan_id === "monthly" && providerSubscriptionId) {
-        await supabase.from("billing_subscriptions").upsert(
-          {
-            user_id: order.user_id,
-            order_id: order.id,
-            provider_subscription_id: providerSubscriptionId,
-            plan_id: "monthly",
-            status: "active",
-            current_period_start: now.toISOString(),
-            current_period_end: addMonths(now, 1),
-            metadata: payload,
-          },
-          { onConflict: "provider_subscription_id" }
-        );
-      }
 
       await supabase
         .from("profiles")

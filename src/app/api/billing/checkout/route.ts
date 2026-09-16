@@ -4,11 +4,27 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { appUrl, xenditRequest, type XenditSessionResponse } from "@/lib/xendit";
 
 const PLANS = {
-  monthly: { label: "Ordiva Premium Monthly", amount: 29000, kind: "subscription" as const },
-  "three-months": { label: "Ordiva Premium 3 Months", amount: 49000, kind: "one-time" as const },
-  yearly: { label: "Ordiva Premium Yearly", amount: 108000, kind: "one-time" as const },
-  lifetime: { label: "Ordiva Premium Lifetime", amount: 249000, kind: "one-time" as const },
-};
+  monthly: {
+    label: "Ordiva Premium Monthly",
+    amount: 29000,
+    accessMonths: 1,
+  },
+  "three-months": {
+    label: "Ordiva Premium 3 Months",
+    amount: 49000,
+    accessMonths: 3,
+  },
+  yearly: {
+    label: "Ordiva Premium Yearly",
+    amount: 108000,
+    accessMonths: 12,
+  },
+  lifetime: {
+    label: "Ordiva Premium Lifetime",
+    amount: 249000,
+    accessMonths: null,
+  },
+} as const;
 
 type PlanId = keyof typeof PLANS;
 
@@ -16,7 +32,10 @@ function isPlanId(value: unknown): value is PlanId {
   return typeof value === "string" && value in PLANS;
 }
 
-function getGivenNames(user: { email?: string; user_metadata?: Record<string, unknown> }) {
+function getGivenNames(user: {
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+}) {
   const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
   const fallbackName = user.email?.split("@")[0] || "Ordiva customer";
   const safeName = String(metadataName || fallbackName)
@@ -24,30 +43,31 @@ function getGivenNames(user: { email?: string; user_metadata?: Record<string, un
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 100);
-  return safeName || "Ordiva customer";
-}
 
-function getSubscriptionAnchorDate() {
-  const anchor = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  if (anchor.getUTCDate() > 28) {
-    anchor.setUTCDate(1);
-    anchor.setUTCMonth(anchor.getUTCMonth() + 1);
-  }
-  return anchor.toISOString();
+  return safeName || "Ordiva customer";
 }
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json().catch(() => null);
     const planId = body?.planId;
-    if (!isPlanId(planId)) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+
+    if (!isPlanId(planId)) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
 
     const plan = PLANS[planId];
     const admin = createAdminClient();
+
     const { data: order, error: orderError } = await admin
       .from("billing_orders")
       .insert({
@@ -56,66 +76,54 @@ export async function POST(request: Request) {
         amount: plan.amount,
         currency: "IDR",
         status: "pending",
-        metadata: { plan_label: plan.label },
+        metadata: {
+          plan_label: plan.label,
+          access_months: plan.accessMonths,
+        },
       })
       .select("id")
       .single();
 
-    if (orderError || !order) return NextResponse.json({ error: "Unable to create billing order" }, { status: 500 });
+    if (orderError || !order) {
+      return NextResponse.json(
+        { error: "Unable to create billing order" },
+        { status: 500 }
+      );
+    }
 
-    const basePayload = {
-      reference_id: order.id,
+    // All Ordiva plans are one-time Payment Sessions.
+    // This allows Monthly to use QRIS and other one-time payment methods.
+    const payload = {
+      session_type: "PAY",
       mode: "PAYMENT_LINK",
+      reference_id: order.id,
       currency: "IDR",
       amount: plan.amount,
       country: "ID",
       locale: "id",
       customer: {
-        // Xendit requires a unique customer reference for each new test session.
         reference_id: `cust-${order.id}`,
         type: "INDIVIDUAL",
         email: user.email,
-        individual_detail: { given_names: getGivenNames(user) },
+        individual_detail: {
+          given_names: getGivenNames(user),
+        },
       },
+      items: [
+        {
+          reference_id: `${order.id}-item`,
+          type: "DIGITAL_SERVICE",
+          name: plan.label,
+          description: "Ordiva Premium digital access",
+          net_unit_amount: plan.amount,
+          quantity: 1,
+          currency: "IDR",
+          category: "PREMIUM_ACCESS",
+        },
+      ],
+      success_return_url: `${appUrl()}/billing?checkout=success`,
+      cancel_return_url: `${appUrl()}/billing?checkout=cancelled`,
     };
-
-    const payload = plan.kind === "subscription"
-      ? {
-          ...basePayload,
-          session_type: "SUBSCRIPTION",
-          subscription: {
-            schedule: {
-              interval: "MONTH",
-              interval_count: 1,
-              anchor_date: getSubscriptionAnchorDate(),
-              retry_interval: "DAY",
-              retry_interval_count: 5,
-              total_retry: 7,
-              failed_attempt_notifications: [1, 3, 5],
-            },
-            immediate_payment: true,
-            failed_cycle_action: "RESUME",
-            notification_channels: ["EMAIL"],
-          },
-          success_return_url: `${appUrl()}/billing?checkout=success`,
-          cancel_return_url: `${appUrl()}/billing?checkout=cancelled`,
-        }
-      : {
-          ...basePayload,
-          session_type: "PAY",
-          items: [{
-            reference_id: `${order.id}-item`,
-            type: "DIGITAL_SERVICE",
-            name: plan.label,
-            description: "Ordiva Premium digital access",
-            net_unit_amount: plan.amount,
-            quantity: 1,
-            currency: "IDR",
-            category: "PREMIUM_ACCESS",
-          }],
-          success_return_url: `${appUrl()}/billing?checkout=success`,
-          cancel_return_url: `${appUrl()}/billing?checkout=cancelled`,
-        };
 
     const session = await xenditRequest<XenditSessionResponse>("/sessions", {
       method: "POST",
@@ -125,16 +133,32 @@ export async function POST(request: Request) {
     const sessionId = session.payment_session_id ?? session.id ?? null;
     const checkoutUrl = session.payment_link_url ?? null;
 
-    await admin.from("billing_orders").update({
-      provider_session_id: sessionId,
-      checkout_url: checkoutUrl,
-      metadata: { plan_label: plan.label, xendit_session: session },
-    }).eq("id", order.id);
+    await admin
+      .from("billing_orders")
+      .update({
+        provider_session_id: sessionId,
+        checkout_url: checkoutUrl,
+        metadata: {
+          plan_label: plan.label,
+          access_months: plan.accessMonths,
+          xendit_session: session,
+        },
+      })
+      .eq("id", order.id);
 
-    if (!checkoutUrl) return NextResponse.json({ error: "Xendit did not return a checkout URL" }, { status: 502 });
+    if (!checkoutUrl) {
+      return NextResponse.json(
+        { error: "Xendit did not return a checkout URL" },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({ checkoutUrl, orderId: order.id });
   } catch (error) {
     console.error("Billing checkout error", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Checkout failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Checkout failed" },
+      { status: 500 }
+    );
   }
 }
