@@ -19,7 +19,21 @@ function isPlanId(value: unknown): value is PlanId {
 function getGivenNames(user: { email?: string; user_metadata?: Record<string, unknown> }) {
   const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
   const fallbackName = user.email?.split("@")[0] || "Ordiva customer";
-  return String(metadataName || fallbackName).trim().slice(0, 100) || "Ordiva customer";
+  const safeName = String(metadataName || fallbackName)
+    .replace(/[^a-zA-Z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100);
+  return safeName || "Ordiva customer";
+}
+
+function getSubscriptionAnchorDate() {
+  const now = new Date();
+  if (now.getUTCDate() > 28) {
+    now.setUTCDate(1);
+    now.setUTCMonth(now.getUTCMonth() + 1);
+  }
+  return now.toISOString();
 }
 
 export async function POST(request: Request) {
@@ -72,8 +86,7 @@ export async function POST(request: Request) {
             schedule: {
               interval: "MONTH",
               interval_count: 1,
-              anchor_date: new Date().toISOString(),
-              total_recurrence: 0,
+              anchor_date: getSubscriptionAnchorDate(),
               retry_interval: "DAY",
               retry_interval_count: 5,
               total_retry: 7,
@@ -83,18 +96,24 @@ export async function POST(request: Request) {
             failed_cycle_action: "RESUME",
             notification_channels: ["EMAIL"],
           },
+          success_return_url: `${appUrl()}/billing?checkout=success`,
+          cancel_return_url: `${appUrl()}/billing?checkout=cancelled`,
         }
       : {
           ...basePayload,
           session_type: "PAY",
           items: [{
             reference_id: `${order.id}-item`,
+            type: "DIGITAL_SERVICE",
             name: plan.label,
-            price: plan.amount,
+            description: "Ordiva Premium digital access",
+            net_unit_amount: plan.amount,
             quantity: 1,
+            currency: "IDR",
+            category: "PREMIUM_ACCESS",
           }],
           success_return_url: `${appUrl()}/billing?checkout=success`,
-          failure_return_url: `${appUrl()}/billing?checkout=failed`,
+          cancel_return_url: `${appUrl()}/billing?checkout=cancelled`,
         };
 
     const session = await xenditRequest<XenditSessionResponse>("/sessions", {
