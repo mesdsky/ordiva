@@ -28,6 +28,8 @@ const PLANS = {
 
 type PlanId = keyof typeof PLANS;
 
+const PREMIUM_BILLING_ENABLED = process.env.PREMIUM_BILLING_ENABLED === "true";
+
 function isPlanId(value: unknown): value is PlanId {
   return typeof value === "string" && value in PLANS;
 }
@@ -48,6 +50,13 @@ function getGivenNames(user: {
 }
 
 export async function POST(request: Request) {
+  if (!PREMIUM_BILLING_ENABLED) {
+    return NextResponse.json(
+      { error: "Premium checkout is coming soon" },
+      { status: 503 }
+    );
+  }
+
   try {
     const supabase = await createClient();
     const {

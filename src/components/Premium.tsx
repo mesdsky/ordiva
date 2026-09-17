@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { PREMIUM_COPY } from "@/lib/premium";
 
 export function PremiumBadge({ className = "" }: { className?: string }) {
@@ -70,8 +69,6 @@ export function PremiumModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const router = useRouter();
-
   if (!open) return null;
 
   return (
@@ -118,13 +115,10 @@ export function PremiumModal({
 
           <button
             type="button"
-            onClick={() => {
-              onClose();
-              router.push("/pricing");
-            }}
+            onClick={onClose}
             className="mt-6 w-full rounded-full bg-[#214F43] px-5 py-3.5 text-sm font-semibold text-white transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#173C34]"
           >
-            View plans
+            {PREMIUM_COPY.button}
           </button>
         </div>
       </div>

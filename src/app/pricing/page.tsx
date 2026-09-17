@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { PremiumBadge } from "@/components/Premium";
 
 type PlanId = "monthly" | "three-months" | "yearly" | "lifetime";
@@ -66,35 +65,7 @@ function formatIDR(amount: number) {
 }
 
 export default function PricingPage() {
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>("yearly");
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
-  const selected = plans.find((plan) => plan.id === selectedPlan) ?? plans[2];
-
-  async function handleCheckout() {
-    setCheckoutLoading(true);
-    setCheckoutError("");
-
-    try {
-      const response = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: selected.id }),
-      });
-      const body = await response.json().catch(() => null);
-
-      if (!response.ok || !body?.checkoutUrl) {
-        throw new Error(body?.error || "Unable to start checkout.");
-      }
-
-      window.location.assign(body.checkoutUrl);
-    } catch (error) {
-      setCheckoutError(
-        error instanceof Error ? error.message : "Unable to start checkout."
-      );
-      setCheckoutLoading(false);
-    }
-  }
+  const selected = plans[2];
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F5F2E8] text-[#173C34]">
@@ -130,7 +101,7 @@ export default function PricingPage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:px-12 md:py-16">
         <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
-            const isSelected = selectedPlan === plan.id;
+            const isSelected = plan.id === selected.id;
 
             return (
               <article
@@ -165,18 +136,9 @@ export default function PricingPage() {
                 )}
 
                 <p className="mt-5 min-h-12 text-sm leading-6 text-[#5F7168]">{plan.description}</p>
-                <button
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => setSelectedPlan(plan.id)}
-                  className={`mt-7 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    isSelected
-                      ? "bg-[#214F43] text-white hover:bg-[#173C34]"
-                      : "border border-[#DDE6D7] bg-[#F9F8F2] text-[#214F43] hover:bg-[#E8EEDB]"
-                  }`}
-                >
-                  {isSelected ? "Selected plan" : "Choose plan"}
-                </button>
+                <div className="mt-7 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-center text-sm font-semibold text-[#7B9685]">
+                  Premium coming soon
+                </div>
               </article>
             );
           })}
@@ -206,16 +168,10 @@ export default function PricingPage() {
               <p className="mt-1 text-xs text-white/45">{selected.period}</p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={checkoutLoading}
-              className="mt-7 w-full rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-wait disabled:opacity-60"
-            >
-              {checkoutLoading ? "Opening secure checkout..." : "Continue to checkout"}
-            </button>
-            {checkoutError && <p className="mt-3 break-words text-center text-xs leading-5 text-[#F9C4C4]">{checkoutError}</p>}
-            <p className="mt-4 text-center text-xs leading-5 text-white/40">Secure checkout is handled by Xendit.</p>
+            <div className="mt-7 w-full rounded-2xl bg-white/15 px-5 py-3.5 text-center text-sm font-semibold text-white/75">
+              Premium coming soon
+            </div>
+            <p className="mt-4 text-center text-xs leading-5 text-white/50">Checkout will be available after Ordiva Premium launches.</p>
           </section>
         </div>
       </section>

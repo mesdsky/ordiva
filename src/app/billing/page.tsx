@@ -97,9 +97,9 @@ export default function BillingPage() {
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">Current access</p>
               <h2 className="mt-3 break-words text-3xl font-semibold tracking-[-0.04em]">{isPremium ? "Ordiva Premium" : "Ordiva Free"}</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-[#7B9685]">{isPremium ? "Your account has Premium access. The webhook-confirmed entitlement below is the source of truth for billing access." : "Track your finances with the core Ordiva experience. Upgrade when you want deeper trends and financial intelligence."}</p>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[#7B9685]">{isPremium ? "Your account has Premium access. The webhook-confirmed entitlement below is the source of truth for billing access." : "Track your finances with the core Ordiva experience. Premium upgrades are currently coming soon. Your core Ordiva experience remains available."}</p>
             </div>
-            {!isPremium && <Link href="/pricing" className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl bg-[#214F43] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#173C34] sm:w-auto">View Premium plans</Link>}
+            {!isPremium && <span className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl border border-[#C8D8BE] bg-[#E8EEDB]/70 px-5 py-3 text-center text-sm font-semibold text-[#5F7168] sm:w-auto">Premium coming soon</span>}
           </div>
 
           {activeEntitlement && (

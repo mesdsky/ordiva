@@ -18,6 +18,6 @@ export const PREMIUM_COPY = {
   description:
     "Go beyond tracking. Get richer trends, comparisons, and intelligence built around your financial data.",
   comingSoon:
-    "Explore the plans available for Ordiva Premium. Checkout will be available soon.",
-  button: "View Premium plans",
+    "Ordiva Premium is coming soon. Checkout is not available yet.",
+  button: "Got it",
 } as const;
