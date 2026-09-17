@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
+import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
 type Transaction = {
   id: string;
@@ -45,6 +46,7 @@ export default function TransactionsPage() {
   const [message, setMessage] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const [type, setType] =
     useState<"income" | "expense">("expense");
@@ -531,12 +533,25 @@ export default function TransactionsPage() {
                 {/* CATEGORY */}
 
                 <div>
-                  <label
-                    htmlFor="category"
-                    className="mb-2 block text-sm font-semibold"
-                  >
-                    Category
-                  </label>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label
+                      htmlFor="category"
+                      className="block text-sm font-semibold"
+                    >
+                      Category
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategoryModalOpen(true);
+                        setMessage("");
+                      }}
+                      className="text-xs font-semibold text-[#214F43] hover:text-[#173C34]"
+                    >
+                      + New category
+                    </button>
+                  </div>
 
                   <select
                     id="category"
@@ -548,21 +563,20 @@ export default function TransactionsPage() {
                     required
                     className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
                   >
-                    <option value="">
-                      Select category
-                    </option>
+                    <option value="">Select category</option>
 
-                    {filteredCategories.map(
-                      (category) => (
-                        <option
-                          key={category.id}
-                          value={category.id}
-                        >
-                          {category.name}
-                        </option>
-                      )
-                    )}
+                    {filteredCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
+
+                  {filteredCategories.length === 0 && (
+                    <p className="mt-2 text-xs text-[#7B9685]">
+                      No {type} categories yet. Create your first one.
+                    </p>
+                  )}
                 </div>
 
                 {/* AMOUNT */}
@@ -944,6 +958,31 @@ export default function TransactionsPage() {
           </div>
         </div>
       </main>
+
+      <CategoryCreateModal
+        open={categoryModalOpen}
+        defaultType={type}
+        allowTypeSelection={true}
+        onClose={() => setCategoryModalOpen(false)}
+        onCreated={(createdCategory: CreatedCategory) => {
+          setCategories((current) =>
+            [...current.filter((category) => category.id !== createdCategory.id), createdCategory]
+              .sort((a, b) => a.name.localeCompare(b.name))
+          );
+
+          if (createdCategory.type === type) {
+            setCategoryId(createdCategory.id);
+            setMessage("Category created and selected.");
+          } else {
+            setCategoryId("");
+            setMessage(
+              `Category "${createdCategory.name}" created as ${createdCategory.type}.`
+            );
+          }
+
+          setDirty(true);
+        }}
+      />
 
       <ConfirmModal
         open={deleteModalOpen}

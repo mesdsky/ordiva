@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
+import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
 type Category = {
   id: string;
@@ -63,6 +64,7 @@ export default function BudgetPage() {
   );
 
   const [showForm, setShowForm] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const [categoryId, setCategoryId] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
@@ -750,12 +752,26 @@ export default function BudgetPage() {
                   className="grid gap-5 md:grid-cols-2"
                 >
                   <div>
-                    <label
-                      htmlFor="budget-category"
-                      className="mb-2 block text-sm font-semibold"
-                    >
-                      Category
-                    </label>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label
+                        htmlFor="budget-category"
+                        className="block text-sm font-semibold"
+                      >
+                        Category
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategoryModalOpen(true);
+                          setMessage("");
+                          setErrorMessage("");
+                        }}
+                        className="text-xs font-semibold text-[#214F43] hover:text-[#173C34]"
+                      >
+                        + New category
+                      </button>
+                    </div>
 
                     <select
                       id="budget-category"
@@ -767,27 +783,19 @@ export default function BudgetPage() {
                       required
                       className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
                     >
-                      <option value="">
-                        Select category
-                      </option>
+                      <option value="">Select category</option>
 
-                      {availableCategories.map(
-                        (category) => (
-                          <option
-                            key={category.id}
-                            value={category.id}
-                          >
-                            {category.name}
-                          </option>
-                        )
-                      )}
+                      {availableCategories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
                     </select>
 
-                    {availableCategories.length ===
-                      0 && (
+                    {availableCategories.length === 0 && (
                       <p className="mt-2 text-xs text-[#7B9685]">
-                        All expense categories already
-                        have a budget for this month.
+                        All expense categories already have a budget for this
+                        month. You can still create a new personal category.
                       </p>
                     )}
                   </div>
@@ -1167,6 +1175,24 @@ export default function BudgetPage() {
           </div>
         </div>
       </main>
+
+      <CategoryCreateModal
+        open={categoryModalOpen}
+        defaultType="expense"
+        allowTypeSelection={false}
+        onClose={() => setCategoryModalOpen(false)}
+        onCreated={(createdCategory: CreatedCategory) => {
+          setCategories((current) =>
+            [...current, createdCategory].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            )
+          );
+          setCategoryId(createdCategory.id);
+          setDirty(true);
+          setMessage("Category created and selected.");
+          setErrorMessage("");
+        }}
+      />
 
       <ConfirmModal
         open={showDeleteModal}
