@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
+import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
@@ -73,7 +74,7 @@ export default function SubscriptionsPage() {
     activeSubscriptions.length >= SUBSCRIPTION_LIMIT;
 
   function formatDate(date: string) {
-    return new Date(`${date}T00:00:00`).toLocaleDateString("id-ID", {
+    return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -619,7 +620,7 @@ export default function SubscriptionsPage() {
     return (
       <div
         key={subscription.id}
-        className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
+        className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
       >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -787,50 +788,29 @@ export default function SubscriptionsPage() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[170px] bg-[linear-gradient(180deg,#DDE8D8_0%,#F0F1E8_42%,#F5F2E8_100%)]"
-      />
 
       <Navigation />
 
-      <main className="relative z-10 min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <div className="mx-auto max-w-7xl px-6 py-10 md:px-12">
+      <main className="relative min-h-screen bg-[#F5F2E8] text-[#173C34]">
+        <div className="app-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-12">
           {/* Header */}
 
-          <div className="flex flex-col gap-4 border-b border-[#DDE6D7] pb-10 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-                Ordiva Subscriptions
-              </p>
-
-              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-                Subscriptions
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
-                Keep track of recurring expenses and never lose sight of what
-                you pay for.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleCreateForm}
-              disabled={hasReachedSubscriptionLimit && !showForm}
-              className={`rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_20px_rgba(33,79,67,0.10)] transition ${
-                hasReachedSubscriptionLimit && !showForm
-                  ? "cursor-not-allowed bg-[#DDE6D7] text-[#7B9685]"
-                  : "bg-[#214F43] text-white hover:-translate-y-0.5 hover:bg-[#173C34]"
-              }`}
-            >
-              {showForm
-                ? "Cancel"
-                : hasReachedSubscriptionLimit
-                ? "Subscription Limit Reached"
-                : "+ Add Subscription"}
-            </button>
-          </div>
+          <PageHero
+            eyebrow="Subscriptions"
+            title="Never miss a"
+            accent="payment."
+            description="Keep track of recurring expenses and never lose sight of what you pay for."
+            actions={
+              <button
+                type="button"
+                onClick={toggleCreateForm}
+                disabled={hasReachedSubscriptionLimit && !showForm}
+                className={heroButton}
+              >
+                {showForm ? "Cancel" : hasReachedSubscriptionLimit ? "Subscription Limit Reached" : "+ Add Subscription"}
+              </button>
+            }
+          />
 
           {/* Plan Usage */}
 
@@ -985,7 +965,7 @@ export default function SubscriptionsPage() {
           {/* Create Form */}
 
           {showForm && !hasReachedSubscriptionLimit && (
-            <div className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
+            <div className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
               <div className="mb-6">
                 <p className="text-lg font-semibold">Add a subscription</p>
 
@@ -1017,7 +997,7 @@ export default function SubscriptionsPage() {
                     }}
                     placeholder="e.g. Netflix"
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -1041,7 +1021,7 @@ export default function SubscriptionsPage() {
                     }}
                     placeholder={currency === "IDR" ? "150000" : "10"}
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
 
                   <p className="mt-2 text-xs text-[#7B9685]">
@@ -1066,7 +1046,7 @@ export default function SubscriptionsPage() {
                       );
                       setDirty(true);
                     }}
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -1091,7 +1071,7 @@ export default function SubscriptionsPage() {
                       setDirty(true);
                     }}
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
 
                   <p className="mt-2 text-xs text-[#7B9685]">
@@ -1119,7 +1099,7 @@ export default function SubscriptionsPage() {
                       setDirty(true);
                     }}
                     placeholder="e.g. Entertainment"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -1143,7 +1123,7 @@ export default function SubscriptionsPage() {
           {/* Summary */}
 
           <div className="mt-8 grid gap-x-8 gap-y-5 md:grid-cols-3">
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Active subscriptions
               </p>
@@ -1153,7 +1133,7 @@ export default function SubscriptionsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Monthly equivalent
               </p>
@@ -1163,7 +1143,7 @@ export default function SubscriptionsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Estimated yearly cost
               </p>
@@ -1194,13 +1174,17 @@ export default function SubscriptionsPage() {
             </div>
 
             {loading || currencyLoading ? (
-              <div className="flex min-h-48 items-center justify-center rounded-3xl border border-[#DDE6D7] bg-white/70 shadow-sm">
-                <p className="text-sm text-[#7B9685]">
-                  Loading your subscriptions...
-                </p>
+              <div role="status" aria-label="Loading your subscriptions" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-4 rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6">
+                    <div className="skeleton h-5 w-1/2 rounded-full" />
+                    <div className="skeleton h-9 w-2/3 rounded-xl" />
+                    <div className="skeleton h-2.5 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : activeSubscriptions.length === 0 ? (
-              <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
+              <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
                 <div className="mx-auto max-w-2xl text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8EEDB] text-[#214F43]">
                     <svg

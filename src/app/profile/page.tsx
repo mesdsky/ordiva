@@ -4,6 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ConfirmModal from "@/components/ConfirmModal";
+import Navigation from "@/components/Navigation";
+import PageHero, { heroButtonGhost } from "@/components/app/PageHero";
+import PageLoader from "@/components/app/PageLoader";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import PlanStatus from "@/components/PlanStatus";
 
@@ -253,58 +256,37 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8]">
-        <p className="text-[#7B9685]">
-          Loading your profile...
-        </p>
-      </main>
-    );
+    return <PageLoader label="Loading your profile..." />;
   }
 
   return (
+    <>
+    <Navigation />
     <main className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
-      <div className="mx-auto max-w-5xl px-6 py-8 md:px-12 md:py-10">
+      <div className="app-enter mx-auto max-w-5xl px-4 py-6 sm:px-6 md:px-12">
         {/* =========================
             HEADER
         ========================= */}
 
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <button
-              type="button"
-              onClick={() => requestNavigation("dashboard")}
-              className="mb-4 text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]"
-            >
-              ← Back to Dashboard
-            </button>
-
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-              Account
-            </p>
-
-            <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
-              Profile
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
-              Manage your personal information.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-3 sm:items-end">
-            <PlanStatus plan={plan} />
-
-            <button
-              type="button"
-              onClick={() => requestNavigation("logout")}
-              disabled={loggingOut}
-              className="w-fit rounded-2xl border border-[#DDE6D7] bg-white/70 px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loggingOut ? "Logging out..." : "Log out"}
-            </button>
-          </div>
-        </div>
+        <PageHero
+          eyebrow="Account"
+          title="Your"
+          accent="profile."
+          description="Manage your personal information."
+          actions={
+            <>
+              <PlanStatus plan={plan} className="border-white/25 bg-white/10 text-white" />
+              <button
+                type="button"
+                onClick={() => requestNavigation("logout")}
+                disabled={loggingOut}
+                className={heroButtonGhost}
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </>
+          }
+        />
 
         {/* =========================
             STATUS MESSAGE
@@ -330,7 +312,7 @@ export default function ProfilePage() {
           onSubmit={handleSaveProfile}
           className="mt-8 space-y-6"
         >
-          <section className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+          <section className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
             <div>
               <p className="text-sm font-semibold">
                 Personal Information
@@ -361,7 +343,7 @@ export default function ProfilePage() {
                     markDirty();
                   }}
                   placeholder="Your full name"
-                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                 />
               </div>
 
@@ -394,7 +376,7 @@ export default function ProfilePage() {
               PREFERENCES
           ========================= */}
 
-          <section className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+          <section className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
             <div>
               <p className="text-sm font-semibold">
                 Preferences
@@ -427,14 +409,14 @@ export default function ProfilePage() {
                     setCurrency(event.target.value);
                     markDirty();
                   }}
-                  className="mt-3 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                  className="mt-3 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                 >
                   {currencies.map((item) => (
                     <option
                       key={item.code}
                       value={item.code}
                     >
-                      {item.symbol} {item.code} —{" "}
+                      {item.symbol} {item.code} ·{" "}
                       {item.name}
                     </option>
                   ))}
@@ -525,7 +507,7 @@ export default function ProfilePage() {
                     markDirty();
                   }}
                   placeholder="e.g. Build an emergency fund"
-                  className="mt-3 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                  className="mt-3 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                 />
               </div>
             </div>
@@ -570,5 +552,6 @@ export default function ProfilePage() {
         loading={loggingOut}
       />
     </main>
+    </>
   );
 }

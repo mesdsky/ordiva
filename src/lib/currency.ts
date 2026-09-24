@@ -64,6 +64,9 @@ export function formatCurrency(
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
+    // "Rp 50,000" reads better than "IDR 50,000"; other codes keep
+    // their unambiguous symbol (e.g. SGD vs USD).
+    currencyDisplay: currency === "IDR" ? "narrowSymbol" : "symbol",
     minimumFractionDigits:
       currency === "IDR" || currency === "JPY" ? 0 : 2,
     maximumFractionDigits:

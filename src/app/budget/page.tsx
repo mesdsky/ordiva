@@ -4,8 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
+import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
+import { todayLocal } from "@/lib/date";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
@@ -60,7 +62,7 @@ export default function BudgetPage() {
   const [plan, setPlan] = useState<"free" | "premium">("free");
 
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7)
+    todayLocal().slice(0, 7)
   );
 
   const [showForm, setShowForm] = useState(false);
@@ -593,54 +595,30 @@ export default function BudgetPage() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[170px] bg-[linear-gradient(180deg,#DDE8D8_0%,#F0F1E8_42%,#F5F2E8_100%)]"
-      />
 
       <Navigation />
 
-      <main className="relative z-10 min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <div className="mx-auto max-w-7xl px-6 py-10 md:px-12">
+      <main className="relative min-h-screen bg-[#F5F2E8] text-[#173C34]">
+        <div className="app-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-12">
 
           {/* HEADER */}
 
-          <div className="flex flex-col gap-4 border-b border-[#DDE6D7] pb-10 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-                Ordiva Budget
-              </p>
-
-              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-                Budget
-              </h1>
-
-              <p className="mt-3 text-lg text-[#5F7168]">
-                Plan your spending and stay on track.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleCreateForm}
-              disabled={
-                hasReachedBudgetLimit &&
-                !showForm
-              }
-              className={`rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_20px_rgba(33,79,67,0.10)] transition ${
-                hasReachedBudgetLimit &&
-                !showForm
-                  ? "cursor-not-allowed bg-[#DDE6D7] text-[#7B9685]"
-                  : "bg-[#214F43] text-white hover:-translate-y-0.5 hover:bg-[#173C34]"
-              }`}
-            >
-              {showForm
-                ? "Cancel"
-                : hasReachedBudgetLimit
-                ? "Budget Limit Reached"
-                : "+ Create Budget"}
-            </button>
-          </div>
+          <PageHero
+            eyebrow="Budget"
+            title="Spend with"
+            accent="intention."
+            description="Plan your spending and stay on track."
+            actions={
+              <button
+                type="button"
+                onClick={toggleCreateForm}
+                disabled={hasReachedBudgetLimit && !showForm}
+                className={heroButton}
+              >
+                {showForm ? "Cancel" : hasReachedBudgetLimit ? "Budget Limit Reached" : "+ Create Budget"}
+              </button>
+            }
+          />
 
           {/* MONTH */}
 
@@ -664,7 +642,7 @@ export default function BudgetPage() {
                 setMessage("");
                 setErrorMessage("");
               }}
-              className="rounded-2xl border border-[#DDE6D7] bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+              className="rounded-2xl border border-[#DDE6D7] bg-white/70 px-4 py-3 text-sm outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
             />
           </div>
 
@@ -735,7 +713,7 @@ export default function BudgetPage() {
 
           {showForm &&
             !hasReachedBudgetLimit && (
-              <div className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
+              <div className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
                 <div className="mb-6">
                   <p className="text-lg font-semibold">
                     Create a budget
@@ -781,7 +759,7 @@ export default function BudgetPage() {
                         markFormDirty();
                       }}
                       required
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     >
                       <option value="">Select category</option>
 
@@ -826,7 +804,7 @@ export default function BudgetPage() {
                           : "100"
                       }
                       required
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
 
                     <p className="mt-2 text-xs text-[#7B9685]">
@@ -857,7 +835,7 @@ export default function BudgetPage() {
                         markFormDirty();
                       }}
                       placeholder="e.g. Monthly Food Budget"
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
                   </div>
 
@@ -934,7 +912,7 @@ export default function BudgetPage() {
           {/* SUMMARY */}
 
           <div className="mt-8 grid gap-y-5 gap-x-5 md:grid-cols-3">
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Total Budget
               </p>
@@ -944,7 +922,7 @@ export default function BudgetPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Total Spent
               </p>
@@ -954,7 +932,7 @@ export default function BudgetPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Remaining
               </p>
@@ -975,10 +953,14 @@ export default function BudgetPage() {
 
           <div className="mt-8">
             {loading || currencyLoading ? (
-              <div className="flex min-h-48 items-center justify-center rounded-3xl border border-[#DDE6D7] bg-white/70 shadow-sm">
-                <p className="text-sm text-[#7B9685]">
-                  Loading your budgets...
-                </p>
+              <div role="status" aria-label="Loading your budgets" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-4 rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6">
+                    <div className="skeleton h-5 w-1/2 rounded-full" />
+                    <div className="skeleton h-9 w-2/3 rounded-xl" />
+                    <div className="skeleton h-2.5 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : budgets.length === 0 ? (
 
@@ -986,7 +968,7 @@ export default function BudgetPage() {
                  EMPTY STATE
               ========================================== */
 
-              <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 text-center shadow-sm">
+              <div className="flex min-h-[420px] items-center justify-center app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 text-center shadow-sm">
                 <div className="max-w-sm">
 
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.35rem] bg-[#E8EEDB] text-2xl text-[#214F43] shadow-sm">
@@ -1051,7 +1033,7 @@ export default function BudgetPage() {
                   return (
                     <div
                       key={budget.id}
-                      className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
+                      className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>

@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import PlanStatus from "@/components/PlanStatus";
+import Navigation from "@/components/Navigation";
+import PageHero from "@/components/app/PageHero";
+import PageLoader from "@/components/app/PageLoader";
 import { createClient } from "@/lib/supabase/client";
 
 type Plan = "free" | "premium";
@@ -18,7 +20,7 @@ function formatIDR(amount: number, currency = "IDR") {
 }
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
@@ -36,6 +38,7 @@ export default function BillingPage() {
   const [plan, setPlan] = useState<Plan>("free");
   const [billing, setBilling] = useState<BillingData>({ orders: [], entitlements: [], subscriptions: [] });
   const [error, setError] = useState("");
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     async function loadBilling() {
@@ -65,34 +68,34 @@ export default function BillingPage() {
       .filter((item) => {
         if (!item.ends_at) return true;
         const endTime = new Date(item.ends_at).getTime();
-        return Number.isNaN(endTime) || endTime > Date.now();
+        return Number.isNaN(endTime) || endTime > now;
       })
       .sort(
         (a, b) =>
           new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()
       )[0] ?? null;
-  }, [billing.entitlements]);
+  }, [billing.entitlements, now]);
   const subscription = billing.subscriptions[0] ?? null;
   const isPremium = plan === "premium";
 
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8]"><p className="text-[#7B9685]">Loading your billing status...</p></main>;
+  if (loading) return <PageLoader label="Loading your billing status..." />;
 
   return (
+    <>
+    <Navigation />
     <main className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:px-12 md:py-10">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <Link href="/dashboard" className="mb-4 inline-block text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]">← Back to Dashboard</Link>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">Account billing</p>
-            <h1 className="mt-2 break-words text-4xl font-bold tracking-tight md:text-5xl">Billing &amp; Plan</h1>
-            <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">Review your Ordiva access, payments, and Premium entitlement.</p>
-          </div>
-          <PlanStatus plan={plan} />
-        </div>
+      <div className="app-enter mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:px-12">
+        <PageHero
+          eyebrow="Account billing"
+          title="Billing &"
+          accent="plan."
+          description="Review your Ordiva access, payments, and Premium entitlement."
+          actions={<PlanStatus plan={plan} className="border-white/25 bg-white/10 text-white" />}
+        />
 
         {error && <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">{error}</div>}
 
-        <section className="mt-8 rounded-[2rem] border border-[#DDE6D7] bg-white/70 p-5 shadow-sm sm:p-6 md:p-8">
+        <section className="app-card mt-6 rounded-[2rem] border border-[#DDE6D7] bg-white/70 p-5 shadow-sm sm:p-6 md:p-8">
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7B9685]">Current access</p>
@@ -117,7 +120,7 @@ export default function BillingPage() {
               <div className="min-w-0"><p className="text-sm font-semibold">Subscription status</p><p className="mt-1 text-sm leading-6 text-[#7B9685]">Your recurring Premium subscription is managed through Xendit.</p></div>
               <span className="inline-flex w-fit shrink-0 rounded-full bg-[#E8EEDB] px-3 py-1 text-xs font-semibold text-[#214F43]">{subscription.cancel_at_period_end ? "Cancels at period end" : subscription.status}</span>
             </div>
-            <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2"><BillingMetric label="Current period" value={`${formatDate(subscription.current_period_start)} – ${formatDate(subscription.current_period_end)}`} /><BillingMetric label="Cancellation" value={subscription.cancelled_at ? formatDate(subscription.cancelled_at) : subscription.cancel_at_period_end ? "Scheduled" : "Not scheduled"} /></div>
+            <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2"><BillingMetric label="Current period" value={`${formatDate(subscription.current_period_start)} to ${formatDate(subscription.current_period_end)}`} /><BillingMetric label="Cancellation" value={subscription.cancelled_at ? formatDate(subscription.cancelled_at) : subscription.cancel_at_period_end ? "Scheduled" : "Not scheduled"} /></div>
           </section>
         )}
 
@@ -130,6 +133,7 @@ export default function BillingPage() {
         <div className="pb-6 pt-8 text-center"><p className="text-xs text-[#7B9685]">Ordiva · Plan Smarter. Live Brighter.</p></div>
       </div>
     </main>
+    </>
   );
 }
 

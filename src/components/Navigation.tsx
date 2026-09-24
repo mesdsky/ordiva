@@ -1,160 +1,108 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
+import { featureIcons } from "@/components/landing/icons";
 import { createClient } from "@/lib/supabase/client";
 
 const navigationItems = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    active: true,
-  },
-  {
-    label: "Transactions",
-    href: "/transactions",
-    active: true,
-  },
-  {
-    label: "Budget",
-    href: "/budget",
-    active: true,
-  },
-  {
-    label: "Goals",
-    href: "/goals",
-    active: true,
-  },
-  {
-    label: "Subscriptions",
-    href: "/subscriptions",
-    active: true,
-  },
-  {
-    label: "Debts",
-    href: "/debts",
-    active: true,
-  },
-  {
-    label: "Reports",
-    href: "/reports",
-    active: true,
-  },
+  { label: "Dashboard", href: "/dashboard", icon: featureIcons.dashboard },
+  { label: "Transactions", href: "/transactions", icon: featureIcons.transactions },
+  { label: "Budget", href: "/budget", icon: featureIcons.budget },
+  { label: "Goals", href: "/goals", icon: featureIcons.goals },
+  { label: "Subscriptions", href: "/subscriptions", icon: featureIcons.subscriptions },
+  { label: "Debts", href: "/debts", icon: featureIcons.debts },
+  { label: "Reports", href: "/reports", icon: featureIcons.reports },
 ];
+
+// Mobile tab bar: the most used pages up front, the rest under "More".
+const tabItems = ["/dashboard", "/transactions", "/budget"];
+const moreItems = navigationItems.filter((item) => !tabItems.includes(item.href));
+
+function Svg({ children, className = "h-[18px] w-[18px]" }: { children: ReactNode; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+const userIcon = <path d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />;
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-
   const { isDirty, setDirty } = useUnsavedChanges();
 
-  const [showUnsavedModal, setShowUnsavedModal] =
-    useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
 
-  const [pendingHref, setPendingHref] =
-    useState<string | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const desktopNavRef = useRef<HTMLElement>(null);
 
-  const [profileMenuOpen, setProfileMenuOpen] =
-    useState(false);
+  // Slide the active pill under the current page's link.
+  useLayoutEffect(() => {
+    const nav = desktopNavRef.current;
+    if (!nav) return;
+    const measure = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      setPill(active ? { left: active.offsetLeft, width: active.offsetWidth } : null);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [pathname]);
 
-  const [pageMenuOpen, setPageMenuOpen] =
-    useState(false);
-
-  const [isLoggingOut, setIsLoggingOut] =
-    useState(false);
-
-  const profileMenuRef =
-    useRef<HTMLDivElement>(null);
-
-  const pageMenuRef =
-    useRef<HTMLDivElement>(null);
-
-  /*
-   * Close open menus when clicking outside
-   */
+  // Close menus on outside click or Escape.
   useEffect(() => {
+    if (!profileMenuOpen && !moreOpen) return;
     function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(target)
-      ) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
       }
-
-      if (
-        pageMenuRef.current &&
-        !pageMenuRef.current.contains(target)
-      ) {
-        setPageMenuOpen(false);
-      }
     }
-
-    if (profileMenuOpen || pageMenuOpen) {
-      document.addEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    }
-
-    return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    };
-  }, [profileMenuOpen, pageMenuOpen]);
-
-  /*
-   * Close open menus with Escape
-   */
-  useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
-        setPageMenuOpen(false);
+        setMoreOpen(false);
       }
     }
-
-    if (profileMenuOpen || pageMenuOpen) {
-      document.addEventListener(
-        "keydown",
-        handleEscape
-      );
-    }
-
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener(
-        "keydown",
-        handleEscape
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, [profileMenuOpen, pageMenuOpen]);
+  }, [profileMenuOpen, moreOpen]);
+
+  function closeMenus() {
+    setProfileMenuOpen(false);
+    setMoreOpen(false);
+  }
 
   function navigateTo(href: string) {
-    if (href === pathname) {
-      setProfileMenuOpen(false);
-      setPageMenuOpen(false);
-      return;
-    }
-
+    closeMenus();
+    if (href === pathname) return;
     if (isDirty) {
       setPendingHref(href);
       setShowUnsavedModal(true);
-      setProfileMenuOpen(false);
-      setPageMenuOpen(false);
       return;
     }
-
-    setProfileMenuOpen(false);
-    setPageMenuOpen(false);
     router.push(href);
   }
 
@@ -165,31 +113,20 @@ export default function Navigation() {
 
   function leaveWithoutSaving() {
     const href = pendingHref;
-
     setShowUnsavedModal(false);
     setPendingHref(null);
     setDirty(false);
-
-    if (href) {
-      router.push(href);
-    }
+    if (href) router.push(href);
   }
 
   async function handleLogout() {
-    if (isLoggingOut) {
-      return;
-    }
-
+    if (isLoggingOut) return;
     setIsLoggingOut(true);
-
     try {
       const supabase = createClient();
-
       await supabase.auth.signOut();
-
-      setProfileMenuOpen(false);
+      closeMenus();
       setDirty(false);
-
       router.replace("/login");
       router.refresh();
     } catch (error) {
@@ -198,425 +135,250 @@ export default function Navigation() {
     }
   }
 
+  const moreActive = moreItems.some((item) => item.href === pathname);
+
   return (
     <>
       {/* Navbar spacer */}
-      <div
-        className="h-[92px] shrink-0"
-        aria-hidden="true"
-      />
+      <div className="h-[84px] shrink-0 sm:h-[96px]" aria-hidden="true" />
 
-      {/* Fixed floating navigation */}
-      <header className="fixed left-0 right-0 top-0 z-50 px-2 pt-2 sm:px-4 sm:pt-3 md:px-6 lg:px-8">
+      <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative flex min-h-[60px] items-center justify-between gap-1 overflow-visible rounded-[1.5rem] border border-white/70 bg-[#F5F2E8]/75 px-2 sm:min-h-[68px] sm:gap-3 sm:px-3 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md md:px-5">
-
-            {/* Glass highlight */}
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/90" />
-
-            {/* Ambient glow */}
-            <div className="pointer-events-none absolute -left-16 top-0 h-24 w-40 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
-
-            {/* Logo */}
+          <div className="relative flex h-[64px] items-center justify-between gap-3 rounded-full border border-white/70 bg-cream/75 px-2 shadow-[0_15px_45px_rgba(23,60,52,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-xl sm:h-[72px] sm:px-3">
             <button
               type="button"
-              onClick={() =>
-                navigateTo("/dashboard")
-              }
-              className="group relative z-10 shrink-0 rounded-2xl px-1 py-1 sm:px-2 transition duration-300 hover:bg-white/35"
+              onClick={() => navigateTo("/dashboard")}
+              className="group shrink-0 rounded-full px-2 transition duration-300 hover:bg-white/40"
               aria-label="Go to dashboard"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- original brand asset */}
               <img
                 src="/ordiva-navbar.png"
                 alt="Ordiva"
-                className="h-12 w-auto object-contain sm:h-16 transition duration-300 group-hover:scale-[1.02]"
+                width={2172}
+                height={724}
+                className="h-11 w-auto object-contain transition duration-300 group-hover:scale-[1.03] sm:h-14"
               />
             </button>
 
             {/* Desktop navigation */}
-            <nav className="relative z-10 hidden items-center gap-1 xl:flex">
+            <nav ref={desktopNavRef} aria-label="Main" className="relative hidden items-center gap-0.5 xl:flex">
+              {pill && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 h-full rounded-full bg-white shadow-[inset_0_1px_0_white,0_6px_18px_rgba(33,79,67,0.10)] transition-[left,width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{ left: pill.left, width: pill.width }}
+                />
+              )}
               {navigationItems.map((item) => {
-                const isActive =
-                  pathname === item.href;
-
-                if (!item.active) {
-                  return (
-                    <span
-                      key={item.label}
-                      className="cursor-not-allowed rounded-xl px-3 py-2 text-sm font-medium text-[#A5B2AA]"
-                      title={`${item.label} coming soon`}
-                    >
-                      {item.label}
-                    </span>
-                  );
-                }
-
+                const isActive = pathname === item.href;
                 return (
                   <button
-                    key={item.label}
+                    key={item.href}
                     type="button"
-                    onClick={() =>
-                      navigateTo(item.href)
-                    }
-                    className={`relative rounded-xl px-3 py-2 text-sm font-medium transition-all duration-300 ${
-                      isActive
-                        ? "bg-white/65 text-[#214F43] shadow-[inset_0_1px_0_white,0_4px_15px_rgba(33,79,67,0.06)]"
-                        : "text-[#5F7168] hover:bg-white/45 hover:text-[#214F43]"
+                    onClick={() => navigateTo(item.href)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`group relative flex items-center gap-2 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors duration-300 ${
+                      isActive ? "text-forest" : "text-slate hover:text-forest"
                     }`}
                   >
-                    {isActive && (
-                      <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#214F43]" />
-                    )}
-
+                    <span
+                      className={`transition-transform duration-300 [&_svg]:h-4 [&_svg]:w-4 ${
+                        isActive ? "" : "group-hover:-translate-y-0.5"
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
                     {item.label}
                   </button>
                 );
               })}
             </nav>
 
-            {/* Mobile + tablet page menu */}
-            <div
-              ref={pageMenuRef}
-              className="relative z-[60] ml-auto shrink-0 xl:hidden"
-            >
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setPageMenuOpen((current) => !current);
-                  setProfileMenuOpen(false);
-                }}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 sm:h-11 sm:w-11 ${
-                  pageMenuOpen
-                    ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
-                    : "border-white/80 bg-white/55 text-[#5F7168] shadow-[0_4px_15px_rgba(33,79,67,0.05)] hover:bg-white/80 hover:text-[#214F43]"
-                }`}
-                aria-label="Open page navigation"
-                aria-expanded={pageMenuOpen}
-                aria-haspopup="menu"
-                title="Page navigation"
+                onClick={() => navigateTo("/transactions")}
+                className="group hidden items-center gap-2 rounded-full bg-forest px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(33,79,67,0.25)] transition duration-300 hover:-translate-y-0.5 hover:bg-ink sm:flex"
               >
-                <span className="relative flex h-4 w-5 flex-col justify-between">
-                  <span
-                    className={`h-0.5 w-5 origin-center rounded-full bg-current transition-transform duration-200 ${
-                      pageMenuOpen ? "translate-y-[7px] rotate-45" : ""
-                    }`}
-                  />
-                  <span
-                    className={`h-0.5 w-5 rounded-full bg-current transition-opacity duration-200 ${
-                      pageMenuOpen ? "opacity-0" : ""
-                    }`}
-                  />
-                  <span
-                    className={`h-0.5 w-5 origin-center rounded-full bg-current transition-transform duration-200 ${
-                      pageMenuOpen ? "-translate-y-[7px] -rotate-45" : ""
-                    }`}
-                  />
-                </span>
+                <span className="text-base leading-none transition-transform duration-300 group-hover:rotate-90">+</span>
+                Add
               </button>
 
-              {pageMenuOpen && (
-                <div
-                  role="menu"
-                  aria-label="Page navigation"
-                  className="absolute right-0 top-[calc(100%+12px)] w-[230px] origin-top-right rounded-[1.25rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-md"
+              <div ref={profileMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen((current) => !current);
+                    setMoreOpen(false);
+                  }}
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                    profileMenuOpen || ["/profile", "/settings", "/billing"].includes(pathname)
+                      ? "border-mint bg-white text-forest shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
+                      : "border-white/80 bg-white/55 text-slate hover:bg-white hover:text-forest"
+                  }`}
+                  aria-label="Open account menu"
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
                 >
-                  <p className="px-3 pb-2 pt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7B9685]">
-                    Navigate to
-                  </p>
+                  <Svg className="h-5 w-5">{userIcon}</Svg>
+                </button>
 
-                  {navigationItems.map((item) => {
-                    const isActive = pathname === item.href;
-
-                    if (!item.active) {
-                      return (
-                        <span
-                          key={item.label}
-                          role="menuitem"
-                          aria-disabled="true"
-                          className="block rounded-xl px-3 py-3 text-sm font-medium text-[#A5B2AA]"
-                        >
-                          {item.label}
-                        </span>
-                      );
-                    }
-
-                    return (
-                      <button
-                        key={item.label}
-                        type="button"
-                        role="menuitem"
-                        onClick={() => navigateTo(item.href)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
-                          isActive
-                            ? "bg-[#E8EEDB] text-[#214F43]"
-                            : "text-[#5F7168] hover:bg-[#E8EEDB]/70 hover:text-[#214F43]"
-                        }`}
-                      >
-                        {item.label}
-                        {isActive && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#214F43]" />
+                {profileMenuOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Account menu"
+                    className="menu-pop absolute top-[calc(100%+12px)] right-0 w-[230px] origin-top-right rounded-[1.4rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-xl"
+                  >
+                    <MenuItem
+                      onClick={() => navigateTo("/profile")}
+                      icon={<Svg>{userIcon}</Svg>}
+                      title="Profile"
+                      subtitle="Your account"
+                    />
+                    <MenuItem
+                      onClick={() => navigateTo("/settings")}
+                      icon={
+                        <Svg>
+                          <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 0 0 3.383 7.75c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066Z" />
+                          <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </Svg>
+                      }
+                      title="Settings"
+                      subtitle="Preferences"
+                    />
+                    <MenuItem
+                      onClick={() => navigateTo("/billing")}
+                      icon={
+                        <Svg>
+                          <rect x="3" y="5" width="18" height="14" rx="2" />
+                          <path d="M3 10h18M7 15h3" />
+                        </Svg>
+                      }
+                      title="Billing"
+                      subtitle="Plan & payments"
+                    />
+                    <div className="my-1.5 h-px bg-line" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-200 hover:bg-[#FDECEC] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F3E4E1] text-[#7A4D43]">
+                        {isLoggingOut ? (
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Svg>
+                            <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15" />
+                            <path d="M12 12h7.5m0 0-3-3m3 3-3 3" />
+                          </Svg>
                         )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Profile menu */}
-            <div
-              ref={profileMenuRef}
-              className="relative z-[60] shrink-0"
-            >
-              {/* Profile icon */}
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileMenuOpen(
-                    (current) => !current
-                  );
-                  setPageMenuOpen(false);
-                }}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 sm:h-11 sm:w-11 ${
-                  profileMenuOpen
-                    ? "border-[#AFC1A4] bg-white/85 text-[#214F43] shadow-[0_8px_25px_rgba(33,79,67,0.12)]"
-                    : "border-white/80 bg-white/55 text-[#5F7168] shadow-[0_4px_15px_rgba(33,79,67,0.05)] hover:bg-white/80 hover:text-[#214F43] hover:shadow-[0_8px_22px_rgba(33,79,67,0.10)]"
-                }`}
-                aria-label="Open account menu"
-                aria-expanded={profileMenuOpen}
-                aria-haspopup="menu"
-                title="Account menu"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-5 w-5"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
-                  />
-                </svg>
-              </button>
-
-              {/* Dropdown */}
-              {profileMenuOpen && (
-                <div
-                  role="menu"
-                  aria-label="Account menu"
-                  className="absolute right-0 top-[calc(100%+12px)] w-[220px] origin-top-right rounded-[1.25rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_20px_50px_rgba(23,60,52,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-md"
-                >
-                  {/* Profile */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() =>
-                      navigateTo("/profile")
-                    }
-                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#E8EEDB]/70"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E8EEDB] text-[#214F43]">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-[18px] w-[18px]"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1-7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
-                        />
-                      </svg>
-                    </span>
-
-                    <span>
-                      <span className="block text-sm font-semibold text-[#214F43]">
-                        Profile
                       </span>
-
-                      <span className="mt-0.5 block text-xs text-[#7A8A82]">
-                        Your account
+                      <span>
+                        <span className="block text-sm font-semibold text-[#7A4D43]">
+                          {isLoggingOut ? "Logging out..." : "Log out"}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-[#9A7770]">Sign out of Ordiva</span>
                       </span>
-                    </span>
-                  </button>
-
-                  {/* Settings */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() =>
-                      navigateTo("/settings")
-                    }
-                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#E8EEDB]/70"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF0E7] text-[#5F7168]">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-[18px] w-[18px]"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 0 0 3.383 7.75c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066Z"
-                        />
-
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                        />
-                      </svg>
-                    </span>
-
-                    <span>
-                      <span className="block text-sm font-semibold text-[#214F43]">
-                        Settings
-                      </span>
-
-                      <span className="mt-0.5 block text-xs text-[#7A8A82]">
-                        Preferences
-                      </span>
-                    </span>
-                  </button>
-
-                  {/* Billing */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() =>
-                      navigateTo("/billing")
-                    }
-                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#E8EEDB]/70"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E8EEDB] text-[#214F43]">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-[18px] w-[18px]"
-                        aria-hidden="true"
-                      >
-                        <rect
-                          x="3"
-                          y="5"
-                          width="18"
-                          height="14"
-                          rx="2"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          d="M3 10h18M7 15h3"
-                        />
-                      </svg>
-                    </span>
-
-                    <span>
-                      <span className="block text-sm font-semibold text-[#214F43]">
-                        Billing
-                      </span>
-
-                      <span className="mt-0.5 block text-xs text-[#7A8A82]">
-                        Plan &amp; payments
-                      </span>
-                    </span>
-                  </button>
-
-                  {/* Divider */}
-                  <div className="my-1.5 h-px bg-[#DDE6D7]" />
-
-                  {/* Logout */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-[#FDECEC] disabled:cursor-wait disabled:opacity-60"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F3E4E1] text-[#7A4D43] transition-colors group-hover:bg-[#E8D7D7]">
-                      {isLoggingOut ? (
-                        <svg
-                          className="h-[17px] w-[17px] animate-spin"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="9"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          />
-
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M12 3a9 9 0 0 1 9 9h-2a7 7 0 0 0-7-7V3Z"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          className="h-[18px] w-[18px]"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15"
-                          />
-
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 12h7.5m0 0-3-3m3 3-3 3"
-                          />
-                        </svg>
-                      )}
-                    </span>
-
-                    <span>
-                      <span className="block text-sm font-semibold text-[#7A4D43]">
-                        {isLoggingOut
-                          ? "Logging out..."
-                          : "Log out"}
-                      </span>
-
-                      <span className="mt-0.5 block text-xs text-[#9A7770]">
-                        Sign out of Ordiva
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              )}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Unsaved changes confirmation */}
+      {/* Mobile + tablet tab bar */}
+      <nav
+        aria-label="Main"
+        className="app-tabbar fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] xl:hidden"
+      >
+        <div className="mx-auto flex max-w-md items-center justify-between rounded-[1.75rem] border border-white/70 bg-cream/85 p-1.5 shadow-[0_-10px_40px_rgba(23,60,52,0.12),inset_0_1px_0_white] backdrop-blur-xl">
+          {navigationItems
+            .filter((item) => tabItems.includes(item.href))
+            .slice(0, 2)
+            .map((item) => (
+              <TabButton key={item.href} item={item} active={pathname === item.href} onClick={() => navigateTo(item.href)} />
+            ))}
+
+          <button
+            type="button"
+            onClick={() => navigateTo("/transactions")}
+            aria-label="Add transaction"
+            className="-mt-7 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-cream bg-forest text-2xl text-white shadow-[0_12px_28px_rgba(33,79,67,0.35)] transition duration-300 active:scale-95"
+          >
+            +
+          </button>
+
+          {navigationItems
+            .filter((item) => item.href === "/budget")
+            .map((item) => (
+              <TabButton key={item.href} item={item} active={pathname === item.href} onClick={() => navigateTo(item.href)} />
+            ))}
+
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpen((open) => !open);
+              setProfileMenuOpen(false);
+            }}
+            aria-expanded={moreOpen}
+            aria-controls="more-sheet"
+            className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-semibold transition-colors ${
+              moreActive || moreOpen ? "bg-white text-forest" : "text-slate"
+            }`}
+          >
+            <Svg>
+              <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+              <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+            </Svg>
+            More
+          </button>
+        </div>
+      </nav>
+
+      {/* "More" sheet */}
+      <div
+        className={`fixed inset-0 z-40 bg-deep/30 backdrop-blur-sm transition-opacity duration-300 xl:hidden ${
+          moreOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={() => setMoreOpen(false)}
+        aria-hidden="true"
+      />
+      <div
+        id="more-sheet"
+        className={`fixed inset-x-3 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md rounded-[1.75rem] border border-white/80 bg-[#F9F8F2]/95 p-2 shadow-[0_24px_60px_rgba(23,60,52,0.2)] backdrop-blur-xl transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] xl:hidden ${
+          moreOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
+        }`}
+      >
+        <p className="px-3 pt-2 pb-1 text-[10px] font-semibold tracking-[0.2em] text-sage uppercase">More pages</p>
+        <div className="grid grid-cols-2 gap-1">
+          {moreItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <button
+                key={item.href}
+                type="button"
+                tabIndex={moreOpen ? 0 : -1}
+                onClick={() => navigateTo(item.href)}
+                className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                  isActive ? "bg-mist text-forest" : "text-ink hover:bg-mist/70"
+                }`}
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-forest [&_svg]:h-4 [&_svg]:w-4">
+                  {item.icon}
+                </span>
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <ConfirmModal
         open={showUnsavedModal}
         title="Leave this page?"
@@ -627,5 +389,58 @@ export default function Navigation() {
         onCancel={stayOnPage}
       />
     </>
+  );
+}
+
+function TabButton({
+  item,
+  active,
+  onClick,
+}: {
+  item: (typeof navigationItems)[number];
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-semibold transition-colors [&_svg]:h-[18px] [&_svg]:w-[18px] ${
+        active ? "bg-white text-forest shadow-[0_4px_14px_rgba(33,79,67,0.08)]" : "text-slate"
+      }`}
+    >
+      {item.icon}
+      {item.label === "Transactions" ? "Activity" : item.label === "Dashboard" ? "Home" : item.label}
+    </button>
+  );
+}
+
+function MenuItem({
+  onClick,
+  icon,
+  title,
+  subtitle,
+}: {
+  onClick: () => void;
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-200 hover:bg-mist/70"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-mist text-forest transition-transform duration-300 group-hover:scale-105">
+        {icon}
+      </span>
+      <span>
+        <span className="block text-sm font-semibold text-forest">{title}</span>
+        <span className="mt-0.5 block text-xs text-[#7A8A82]">{subtitle}</span>
+      </span>
+    </button>
   );
 }

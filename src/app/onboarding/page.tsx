@@ -386,7 +386,7 @@ export default function OnboardingPage() {
               }}
             >
               {/* =================================================
-                  STEP 1 — WELCOME
+                  STEP 1 · WELCOME
               ================================================= */}
               {step === 1 && (
                 <div className="min-h-[390px] animate-[fadeIn_0.3s_ease-out]">
@@ -421,7 +421,7 @@ export default function OnboardingPage() {
               )}
 
               {/* =================================================
-                  STEP 2 — PROFILE
+                  STEP 2 · PROFILE
               ================================================= */}
               {step === 2 && (
                 <div className="min-h-[390px] animate-[fadeIn_0.3s_ease-out]">
@@ -449,7 +449,7 @@ export default function OnboardingPage() {
                         }
                         placeholder="Your name"
                         autoFocus
-                        className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-4 text-base outline-none transition placeholder:text-[#A4B1AA] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                        className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-4 text-base outline-none transition placeholder:text-[#A4B1AA] hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                       />
                     </div>
 
@@ -511,7 +511,7 @@ export default function OnboardingPage() {
               )}
 
               {/* =================================================
-                  STEP 3 — GOAL
+                  STEP 3 · GOAL
               ================================================= */}
               {step === 3 && (
                 <div className="min-h-[390px] animate-[fadeIn_0.3s_ease-out]">
@@ -576,7 +576,7 @@ export default function OnboardingPage() {
               )}
 
               {/* =================================================
-                  STEP 4 — CURRENCY
+                  STEP 4 · CURRENCY
               ================================================= */}
               {step === 4 && (
                 <div className="min-h-[390px] animate-[fadeIn_0.3s_ease-out]">

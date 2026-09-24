@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
+import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
@@ -65,7 +66,7 @@ export default function GoalsPage() {
       return "No target date";
     }
 
-    return new Date(`${date}T00:00:00`).toLocaleDateString("id-ID", {
+    return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -476,48 +477,28 @@ export default function GoalsPage() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[170px] bg-[linear-gradient(180deg,#DDE8D8_0%,#F0F1E8_42%,#F5F2E8_100%)]"
-      />
 
       <Navigation />
 
-      <main className="relative z-10 min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <div className="mx-auto max-w-7xl px-6 py-10 md:px-12">
+      <main className="relative min-h-screen bg-[#F5F2E8] text-[#173C34]">
+        <div className="app-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-12">
           {/* Header */}
-          <div className="flex flex-col gap-4 border-b border-[#DDE6D7] pb-10 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-                Ordiva Goals
-              </p>
-
-              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-                Financial Goals
-              </h1>
-
-              <p className="mt-3 text-lg text-[#5F7168]">
-                Plan your goals and track your progress.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleCreateForm}
-              disabled={hasReachedGoalLimit && !showForm}
-              className={`rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_20px_rgba(33,79,67,0.10)] transition ${
-                hasReachedGoalLimit && !showForm
-                  ? "cursor-not-allowed bg-[#DDE6D7] text-[#7B9685]"
-                  : "bg-[#214F43] text-white hover:-translate-y-0.5 hover:bg-[#173C34]"
-              }`}
-            >
-              {showForm
-                ? "Cancel"
-                : hasReachedGoalLimit
-                ? "Goal Limit Reached"
-                : "+ Create Goal"}
-            </button>
-          </div>
+          <PageHero
+            eyebrow="Financial goals"
+            title="Make progress"
+            accent="visible."
+            description="Plan your goals and track your progress."
+            actions={
+              <button
+                type="button"
+                onClick={toggleCreateForm}
+                disabled={hasReachedGoalLimit && !showForm}
+                className={heroButton}
+              >
+                {showForm ? "Cancel" : hasReachedGoalLimit ? "Goal Limit Reached" : "+ Create Goal"}
+              </button>
+            }
+          />
 
           {/* Plan Usage */}
           <div className="mt-6 flex flex-col gap-3 rounded-3xl border border-[#DDE6D7] bg-white/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -575,7 +556,7 @@ export default function GoalsPage() {
 
           {/* Create Form */}
           {showForm && !hasReachedGoalLimit && (
-            <div className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
+            <div className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
               <div className="mb-6">
                 <p className="text-lg font-semibold">
                   Create a financial goal
@@ -608,7 +589,7 @@ export default function GoalsPage() {
                     }}
                     placeholder="e.g. New Laptop"
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -632,7 +613,7 @@ export default function GoalsPage() {
                     }}
                     placeholder={currency === "IDR" ? "10000000" : "10000"}
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -655,7 +636,7 @@ export default function GoalsPage() {
                       markFormDirty();
                     }}
                     placeholder="0"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -678,7 +659,7 @@ export default function GoalsPage() {
                       setTargetDate(event.target.value);
                       markFormDirty();
                     }}
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -702,7 +683,7 @@ export default function GoalsPage() {
                       markFormDirty();
                     }}
                     placeholder="e.g. Save for a new laptop"
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                   />
                 </div>
 
@@ -725,7 +706,7 @@ export default function GoalsPage() {
 
           {/* Summary */}
           <div className="mt-8 grid gap-x-5 gap-y-5 md:grid-cols-3">
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">Total Target</p>
 
               <p className="mt-3 text-2xl font-bold">
@@ -733,7 +714,7 @@ export default function GoalsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">Total Saved</p>
 
               <p className="mt-3 text-2xl font-bold">
@@ -741,7 +722,7 @@ export default function GoalsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">Remaining</p>
 
               <p className="mt-3 text-2xl font-bold text-[#214F43]">
@@ -753,13 +734,17 @@ export default function GoalsPage() {
           {/* Goal List */}
           <div className="mt-8">
             {loading || currencyLoading ? (
-              <div className="flex min-h-48 items-center justify-center rounded-3xl border border-[#DDE6D7] bg-white/70 shadow-sm">
-                <p className="text-sm text-[#7B9685]">
-                  Loading your goals...
-                </p>
+              <div role="status" aria-label="Loading your goals" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-4 rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6">
+                    <div className="skeleton h-5 w-1/2 rounded-full" />
+                    <div className="skeleton h-9 w-2/3 rounded-xl" />
+                    <div className="skeleton h-2.5 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : goals.length === 0 ? (
-              <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
+              <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
                 <div className="mx-auto max-w-2xl text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8EEDB] text-[#214F43]">
                     <svg
@@ -855,7 +840,7 @@ export default function GoalsPage() {
                   return (
                     <div
                       key={goal.id}
-                      className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
+                      className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
                     >
                       {/* Goal Header */}
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -945,7 +930,7 @@ export default function GoalsPage() {
                                   : "1000"
                               }
                               required
-                              className="min-w-0 flex-1 rounded-2xl border border-[#DDE6D7] bg-white px-4 py-3 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                              className="min-w-0 flex-1 rounded-2xl border border-[#DDE6D7] bg-white px-4 py-3 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                             />
 
                             <button

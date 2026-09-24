@@ -1,26 +1,544 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Ordiva palette. The app is designed for one light theme, so there is
+   no dark-mode override (it used to turn unstyled text near-white on
+   the cream backgrounds). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  --color-cream: #f5f2e8;
+  --color-ink: #173c34;
+  --color-forest: #214f43;
+  --color-deep: #102f29;
+  --color-sage: #7b9685;
+  --color-moss: #afc1a4;
+  --color-mint: #c8d8be;
+  --color-mist: #e8eedb;
+  --color-line: #dde6d7;
+  --color-slate: #5f7168;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-mint);
+  color: var(--color-deep);
+}
+
+/* ---------- Landing page motion ---------- */
+
+html:has(.landing) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+/* Scroll reveal: LandingEffects sets data-shown once in view. */
+.landing [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 1.1s var(--ease-out),
+    clip-path 1.2s var(--ease-out),
+    translate 0.5s var(--ease-out),
+    box-shadow 0.5s var(--ease-out),
+    border-color 0.5s var(--ease-out);
+  /* Hover transitions (last three) must not inherit the stagger delay. */
+  transition-delay: var(--d, 0ms), var(--d, 0ms), var(--d, 0ms), 0ms, 0ms, 0ms;
+}
+.landing [data-reveal="fade"] {
+  transform: none;
+}
+.landing [data-reveal="scale"] {
+  transform: scale(0.94) translateY(24px);
+}
+.landing [data-reveal="left"] {
+  transform: translateX(-64px);
+}
+.landing [data-reveal="right"] {
+  transform: translateX(64px);
+}
+.landing [data-reveal="tilt"] {
+  transform: perspective(1200px) rotateX(16deg) translateY(70px);
+  transform-origin: 50% 0;
+}
+.landing [data-reveal="clip"] {
+  opacity: 1;
+  transform: translateY(40px);
+  clip-path: inset(0 0 100% 0);
+}
+.landing [data-reveal][data-shown] {
+  opacity: 1;
+  transform: none;
+}
+.landing [data-reveal="clip"][data-shown] {
+  clip-path: inset(-10% -10% -25% -10%);
+}
+
+/* Scroll-linked effects. --sp / --x come from LandingEffects; the
+   fallbacks are the finished state for no-JS and reduced motion. */
+.hero-copy {
+  opacity: calc(1 - var(--x, 0) * 1.6);
+  translate: 0 calc(var(--x, 0) * -90px);
+}
+.hero-mock {
+  translate: 0 calc(var(--x, 0) * 80px);
+  scale: calc(1 - var(--x, 0) * 0.08);
+}
+.sp-unfold {
+  transform: perspective(1600px) rotateX(calc((1 - var(--sp, 1)) * 24deg))
+    scale(calc(0.86 + var(--sp, 1) * 0.14));
+  transform-origin: 50% 100%;
+}
+.sp-expand {
+  clip-path: inset(
+    calc((1 - var(--sp, 1)) * 9%) calc((1 - var(--sp, 1)) * 12%)
+      round calc((1 - var(--sp, 1)) * 48px)
+  );
+}
+.marquee-shift {
+  translate: calc(var(--p, 0.5) * -18%) 0;
+}
+.marquee-shift-reverse {
+  translate: calc(var(--p, 0.5) * 18% - 18%) 0;
+}
+.marquee-reverse {
+  animation-direction: reverse;
+}
+
+/* Footer wordmark letters rise in one by one. */
+.letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(55%);
+  transition:
+    transform 1.3s var(--ease-out),
+    opacity 1s var(--ease-out);
+  transition-delay: calc(var(--i) * 70ms);
+}
+[data-shown] .letter {
+  opacity: 1;
+  transform: none;
+}
+
+/* Masked line reveal for headlines. */
+.line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.line-mask > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1.2s var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+[data-shown] .line-mask > span,
+.line-mask[data-shown] > span {
+  transform: none;
+}
+
+/* Hero intro: pure CSS so it plays at first paint without waiting on JS. */
+@keyframes intro {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+@keyframes intro-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(24px);
+  }
+}
+@keyframes line-in {
+  from {
+    transform: translateY(105%);
+  }
+}
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.intro {
+  animation: intro 1.1s var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+.intro-scale {
+  animation: intro-scale 1.2s var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+.intro-lines .line-mask > span {
+  transform: none;
+  animation: line-in 1.2s var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+.landing .intro-grow [data-grow] {
+  transform: none;
+  animation: grow-y 1.2s var(--ease-out) both;
+  animation-delay: calc(var(--d, 0ms) + 500ms);
+}
+.landing .intro-grow [data-grow="x"] {
+  animation-name: grow-x;
+}
+
+/* Bars and progress that grow once revealed. */
+.landing [data-grow] {
+  transform-origin: bottom;
+  transform: scaleY(0);
+  transition: transform 1.2s var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+.landing [data-grow="x"] {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.landing [data-shown] [data-grow],
+.landing [data-grow][data-shown] {
+  transform: none;
+}
+
+/* Donut that sweeps in. */
+@property --sweep {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.donut {
+  --sweep: 0%;
+  transition: --sweep 1.6s var(--ease-out) 0.2s;
+  mask: conic-gradient(#000 var(--sweep), transparent 0);
+}
+[data-shown] .donut,
+.donut[data-shown] {
+  --sweep: 100%;
+}
+
+/* Scroll-scrubbed words: container gets --p (0..1) from LandingEffects. */
+.scrub-word {
+  opacity: clamp(0.14, calc(var(--p, 0) * var(--n) * 1.15 - var(--i)), 1);
+  transition: opacity 0.2s linear;
+}
+
+/* Pointer spotlight on cards. */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(175 193 164 / 0.28),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* Marquee */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  animation: marquee var(--speed, 40s) linear infinite;
+}
+.marquee-wrap:hover .marquee {
+  animation-play-state: paused;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(200 216 190 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(200 216 190 / 0);
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2.2s var(--ease-out, ease-out) infinite;
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+.scroll-cue {
+  animation: scroll-cue 2.4s var(--ease-out, ease-out) infinite;
+}
+
+/* Native <dialog> with enter/exit transitions. */
+.sheet {
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+  transition:
+    opacity 0.35s var(--ease-out, ease-out),
+    transform 0.5s var(--ease-out, ease-out),
+    overlay 0.35s allow-discrete,
+    display 0.35s allow-discrete;
+}
+.sheet[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  .sheet[open] {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+}
+.sheet::backdrop {
+  background: rgb(16 47 41 / 0);
+  backdrop-filter: blur(0);
+  transition:
+    background 0.35s,
+    backdrop-filter 0.35s,
+    overlay 0.35s allow-discrete,
+    display 0.35s allow-discrete;
+}
+.sheet[open]::backdrop {
+  background: rgb(16 47 41 / 0.55);
+  backdrop-filter: blur(6px);
+}
+@starting-style {
+  .sheet[open]::backdrop {
+    background: rgb(16 47 41 / 0);
+    backdrop-filter: blur(0);
+  }
+}
+
+/* FAQ accordion: animate native <details> where supported. */
+.faq {
+  interpolate-size: allow-keywords;
+}
+.faq::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.45s var(--ease-out, ease-out),
+    content-visibility 0.45s allow-discrete;
+}
+.faq[open]::details-content {
+  height: auto;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Range inputs for the simulator. */
+.range {
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-forest) var(--fill, 50%),
+    var(--color-line) var(--fill, 50%)
+  );
+  cursor: pointer;
+}
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-cream);
+  border: 6px solid var(--color-forest);
+  box-shadow: 0 4px 14px rgb(23 60 52 / 0.25);
+  transition: transform 0.2s;
+}
+.range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-cream);
+  border: 6px solid var(--color-forest);
+}
+.range:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 6px;
+}
+
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(23 60 52 / 0.25);
+}
+
+/* ---------- App pages ---------- */
+
+/* Page sections fade up in sequence on load. */
+.app-enter > * {
+  animation: intro 0.9s var(--ease-out) both;
+}
+.app-enter > :nth-child(1) { animation-delay: 40ms; }
+.app-enter > :nth-child(2) { animation-delay: 120ms; }
+.app-enter > :nth-child(3) { animation-delay: 200ms; }
+.app-enter > :nth-child(4) { animation-delay: 280ms; }
+.app-enter > :nth-child(5) { animation-delay: 360ms; }
+.app-enter > :nth-child(n + 6) { animation-delay: 440ms; }
+
+/* List items cascade in. */
+.app-list > * {
+  animation: intro 0.7s var(--ease-out) both;
+}
+.app-list > :nth-child(1) { animation-delay: 30ms; }
+.app-list > :nth-child(2) { animation-delay: 70ms; }
+.app-list > :nth-child(3) { animation-delay: 110ms; }
+.app-list > :nth-child(4) { animation-delay: 150ms; }
+.app-list > :nth-child(5) { animation-delay: 190ms; }
+.app-list > :nth-child(6) { animation-delay: 230ms; }
+.app-list > :nth-child(n + 7) { animation-delay: 270ms; }
+
+.app-card {
+  transition:
+    box-shadow 0.45s var(--ease-out),
+    border-color 0.45s var(--ease-out),
+    translate 0.45s var(--ease-out);
+}
+.app-card:hover {
+  border-color: var(--color-mint);
+  box-shadow: 0 28px 60px -32px rgb(23 60 52 / 0.35);
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-mist) 0%, #f9f8f2 45%, var(--color-mist) 90%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Dotted texture used on dark hero panels. */
+.dot-grid {
+  background-image: radial-gradient(rgb(200 216 190 / 0.18) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to left, black, transparent 70%);
+}
+
+@keyframes drift {
+  50% {
+    transform: translate(30px, -20px) scale(1.1);
+  }
+}
+.drift {
+  animation: drift 14s ease-in-out infinite;
+}
+
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+.menu-pop {
+  animation: menu-pop 0.3s var(--ease-out) both;
+}
+
+/* Room for the mobile tab bar. */
+@media (max-width: 1279px) {
+  body:has(.app-tabbar) {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html:has(.landing) {
+    scroll-behavior: auto;
+  }
+  .landing *,
+  .landing *::before,
+  .landing *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  .landing [data-reveal],
+  .landing [data-grow],
+  .line-mask > span,
+  .letter {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .donut {
+    --sweep: 100%;
+  }
+  .scrub-word {
+    opacity: 1;
+  }
+  .marquee-shift,
+  .marquee-shift-reverse {
+    translate: none;
+  }
 }

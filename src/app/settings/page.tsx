@@ -5,6 +5,9 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ConfirmModal from "@/components/ConfirmModal";
+import Navigation from "@/components/Navigation";
+import PageHero, { heroButtonGhost } from "@/components/app/PageHero";
+import PageLoader from "@/components/app/PageLoader";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import PlanStatus from "@/components/PlanStatus";
 
@@ -144,52 +147,33 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8]">
-        <p className="text-[#7B9685]">Loading your settings...</p>
-      </main>
-    );
+    return <PageLoader label="Loading your settings..." />;
   }
 
   return (
+    <>
+    <Navigation />
     <main className="min-h-screen bg-[#F5F2E8] text-[#173C34]">
-      <div className="mx-auto max-w-5xl px-6 py-8 md:px-12 md:py-10">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <button
-              type="button"
-              onClick={() => requestNavigation("dashboard")}
-              className="mb-4 text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]"
-            >
-              ← Back to Dashboard
-            </button>
-
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-              Account control
-            </p>
-
-            <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
-              Settings
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
-              Manage security and app preferences without changing your profile identity.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-3 sm:items-end">
-            <PlanStatus plan={plan} />
-
-            <button
-              type="button"
-              onClick={() => requestNavigation("logout")}
-              disabled={loggingOut}
-              className="w-fit rounded-2xl border border-[#DDE6D7] bg-white/70 px-5 py-3 text-sm font-semibold text-[#214F43] transition hover:bg-[#E8EEDB] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loggingOut ? "Logging out..." : "Log out"}
-            </button>
-          </div>
-        </div>
+      <div className="app-enter mx-auto max-w-5xl px-4 py-6 sm:px-6 md:px-12">
+        <PageHero
+          eyebrow="Account control"
+          title="Make Ordiva"
+          accent="yours."
+          description="Manage security and app preferences without changing your profile identity."
+          actions={
+            <>
+              <PlanStatus plan={plan} className="border-white/25 bg-white/10 text-white" />
+              <button
+                type="button"
+                onClick={() => requestNavigation("logout")}
+                disabled={loggingOut}
+                className={heroButtonGhost}
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </>
+          }
+        />
 
         {(message || error) && (
           <div
@@ -203,7 +187,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <section className="mt-8 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+        <section className="mt-8 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
           <p className="text-sm font-semibold">Profile preferences</p>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7B9685]">
             Your name, currency, account type, and financial goal are identity preferences managed from your Profile.
@@ -217,7 +201,7 @@ export default function SettingsPage() {
           </button>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+        <section className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
           <div>
             <p className="text-sm font-semibold">Security</p>
             <p className="mt-1 text-sm text-[#7B9685]">
@@ -241,7 +225,7 @@ export default function SettingsPage() {
                   }}
                   placeholder="At least 6 characters"
                   minLength={6}
-                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                 />
               </div>
 
@@ -259,7 +243,7 @@ export default function SettingsPage() {
                   }}
                   placeholder="Repeat your new password"
                   minLength={6}
-                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                  className="mt-2 w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3 text-sm text-[#173C34] outline-none transition placeholder:text-[#9AA9A0] hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                 />
               </div>
             </div>
@@ -276,7 +260,7 @@ export default function SettingsPage() {
           </form>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
+        <section className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm md:p-8">
           <p className="text-sm font-semibold">Billing &amp; plan</p>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7B9685]">
             Review your current plan and payment history from the billing area.
@@ -312,6 +296,7 @@ export default function SettingsPage() {
         loading={loggingOut}
       />
     </main>
+    </>
   );
 }
 

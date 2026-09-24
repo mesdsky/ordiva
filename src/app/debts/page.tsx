@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
+import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
@@ -88,7 +89,7 @@ export default function DebtsPage() {
     if (!date) return "No due date";
 
     return new Date(`${date}T00:00:00`).toLocaleDateString(
-      "id-ID",
+      "en-US",
       {
         day: "numeric",
         month: "short",
@@ -694,7 +695,7 @@ export default function DebtsPage() {
     return (
       <div
         key={debt.id}
-        className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
+        className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm transition hover:shadow-md"
       >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -853,7 +854,7 @@ export default function DebtsPage() {
                     ? "50000"
                     : "10"
                 }
-                className="min-w-0 flex-1 rounded-xl border border-[#DDE6D7] bg-white px-4 py-2.5 text-sm outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                className="min-w-0 flex-1 rounded-xl border border-[#DDE6D7] bg-white px-4 py-2.5 text-sm outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
               />
 
               <button
@@ -948,55 +949,30 @@ export default function DebtsPage() {
 
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[170px] bg-[linear-gradient(180deg,#DDE8D8_0%,#F0F1E8_42%,#F5F2E8_100%)]"
-      />
 
       <Navigation />
 
-      <main className="relative z-10 min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <div className="mx-auto max-w-7xl px-6 py-10 md:px-12">
+      <main className="relative min-h-screen bg-[#F5F2E8] text-[#173C34]">
+        <div className="app-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-12">
 
           {/* Header */}
 
-          <div className="flex flex-col gap-4 border-b border-[#DDE6D7] pb-10 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-                Ordiva Debts
-              </p>
-
-              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-                Debts
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-lg text-[#5F7168]">
-                Stay on top of what you owe and what
-                you&apos;re still waiting to receive.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleCreateForm}
-              disabled={
-                hasReachedDebtLimit &&
-                !showForm
-              }
-              className={`rounded-2xl px-5 py-3 text-sm font-semibold shadow-[0_8px_20px_rgba(33,79,67,0.10)] transition ${
-                hasReachedDebtLimit &&
-                !showForm
-                  ? "cursor-not-allowed bg-[#DDE6D7] text-[#7B9685]"
-                  : "bg-[#214F43] text-white hover:-translate-y-0.5 hover:bg-[#173C34]"
-              }`}
-            >
-              {showForm
-                ? "Cancel"
-                : hasReachedDebtLimit
-                ? "Debt Limit Reached"
-                : "+ Add Debt"}
-            </button>
-          </div>
+          <PageHero
+            eyebrow="Debts"
+            title="A clearer path"
+            accent="forward."
+            description="Stay on top of what you owe and what you're still waiting to receive."
+            actions={
+              <button
+                type="button"
+                onClick={toggleCreateForm}
+                disabled={hasReachedDebtLimit && !showForm}
+                className={heroButton}
+              >
+                {showForm ? "Cancel" : hasReachedDebtLimit ? "Debt Limit Reached" : "+ Add Debt"}
+              </button>
+            }
+          />
 
           {/* Plan Usage */}
 
@@ -1130,7 +1106,7 @@ export default function DebtsPage() {
 
           {showForm &&
             !hasReachedDebtLimit && (
-              <div className="mt-6 rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
+              <div className="mt-6 app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm sm:p-7">
                 <div className="mb-6">
                   <p className="text-lg font-semibold">
                     Add debt or receivable
@@ -1164,7 +1140,7 @@ export default function DebtsPage() {
                       }}
                       placeholder="e.g. Loan to Andi"
                       required
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
                   </div>
 
@@ -1185,14 +1161,14 @@ export default function DebtsPage() {
                         );
                         setDirty(true);
                       }}
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     >
                       <option value="debt">
-                        Debt — I owe money
+                        Debt: I owe money
                       </option>
 
                       <option value="receivable">
-                        Receivable — I&apos;m owed money
+                        Receivable: I&apos;m owed money
                       </option>
                     </select>
                   </div>
@@ -1223,7 +1199,7 @@ export default function DebtsPage() {
                           : "50"
                       }
                       required
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
 
                     <p className="mt-2 text-xs text-[#7B9685]">
@@ -1253,7 +1229,7 @@ export default function DebtsPage() {
                         );
                         setDirty(true);
                       }}
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
                   </div>
 
@@ -1279,7 +1255,7 @@ export default function DebtsPage() {
                         setDirty(true);
                       }}
                       placeholder="e.g. Laptop installment"
-                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                      className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
                     />
                   </div>
 
@@ -1308,7 +1284,7 @@ export default function DebtsPage() {
           {/* Summary */}
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Total outstanding debt
               </p>
@@ -1324,7 +1300,7 @@ export default function DebtsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Total receivable
               </p>
@@ -1340,7 +1316,7 @@ export default function DebtsPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
+            <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
               <p className="text-sm text-[#7B9685]">
                 Net position
               </p>
@@ -1375,13 +1351,17 @@ export default function DebtsPage() {
             </div>
 
             {loading || currencyLoading ? (
-              <div className="flex min-h-48 items-center justify-center rounded-3xl border border-[#DDE6D7] bg-white/70 shadow-sm">
-                <p className="text-sm text-[#7B9685]">
-                  Loading your debts...
-                </p>
+              <div role="status" aria-label="Loading your debts" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-4 rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-6">
+                    <div className="skeleton h-5 w-1/2 rounded-full" />
+                    <div className="skeleton h-9 w-2/3 rounded-xl" />
+                    <div className="skeleton h-2.5 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : activeDebts.length === 0 ? (
-              <div className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
+              <div className="app-card rounded-[1.75rem] border border-[#DDE6D7] bg-white/70 p-8 shadow-sm md:p-10">
                 <div className="mx-auto max-w-2xl text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8EEDB] text-[#214F43]">
                     <svg
@@ -1417,7 +1397,7 @@ export default function DebtsPage() {
                   </div>
 
                   <p className="mt-6 text-2xl font-bold tracking-tight text-[#173C34]">
-                    Know what you owe — and what you&apos;re owed.
+                    Know what you owe and what you&apos;re owed.
                   </p>
 
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#7B9685] md:text-base">

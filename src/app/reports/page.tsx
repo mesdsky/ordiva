@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import { Leaf } from "@/components/landing/icons";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -706,7 +707,7 @@ export default function ReportsPage() {
                   <h1 className="text-5xl font-semibold leading-[0.96] tracking-[-0.045em] text-white sm:text-6xl md:text-7xl">
                     Your money,
                     <br />
-                    <span className="text-[#C8D8BE]">
+                    <span className="font-serif font-normal tracking-[-0.02em] text-[#C8D8BE] italic">
                       decoded.
                     </span>
                   </h1>
@@ -1497,7 +1498,7 @@ export default function ReportsPage() {
                     {!isPremium ? (
                       <PremiumLock
                         title="Financial health score"
-                        description="Get a 0–100 score based on savings, cash flow, spending control, and consistency."
+                        description="Get a 0 to 100 score based on savings, cash flow, spending control, and consistency."
                         onUpgrade={() => setUpgradeOpen(true)}
                       />
                     ) : (
@@ -1604,7 +1605,7 @@ export default function ReportsPage() {
                 </section>
 
                 {/* =================================================
-                    FULL CATEGORY ANALYSIS — PREMIUM
+                    FULL CATEGORY ANALYSIS · PREMIUM
                 ================================================= */}
                 <section className="mt-12">
                   <MemoReportSectionHeader
@@ -2068,7 +2069,7 @@ function PremiumTeaser({
     >
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#214F43] text-xs text-[#C8D8BE]">
-          ✦
+          <Leaf className="h-4 w-4" />
         </div>
 
         <div className="min-w-0">

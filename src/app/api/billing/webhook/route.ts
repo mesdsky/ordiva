@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertXenditWebhook } from "@/lib/xendit";
+import { assertXenditWebhook, classifyStatus } from "@/lib/xendit";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 function firstString(...values: unknown[]) {
@@ -17,16 +17,21 @@ function addMonths(date: Date, months: number) {
   return next.toISOString();
 }
 
+async function markProcessed(providerEventId: string) {
+  await createAdminClient()
+    .from("billing_webhook_events")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("provider_event_id", providerEventId);
+}
+
 export async function POST(request: Request) {
   try {
     if (!assertXenditWebhook(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const payload = (await request.json().catch(() => null)) as Record<
-      string,
-      any
-    > | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider payload
+    const payload = (await request.json().catch(() => null)) as Record<string, any> | null;
 
     if (!payload) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -73,10 +78,8 @@ export async function POST(request: Request) {
       .select("id")
       .maybeSingle();
 
-    if (
-      eventError &&
-      !eventError.message.toLowerCase().includes("duplicate")
-    ) {
+    // 23505 = unique violation, i.e. a retry of an event we already saw.
+    if (eventError && eventError.code !== "23505") {
       return NextResponse.json(
         { error: "Unable to record webhook" },
         { status: 500 }
@@ -84,10 +87,17 @@ export async function POST(request: Request) {
     }
 
     if (!inserted) {
-      return NextResponse.json({
-        received: true,
-        duplicate: true,
-      });
+      // Only skip retries that were fully processed. A retry after a
+      // crash mid-processing must go through, or the payment is lost.
+      const { data: existing } = await supabase
+        .from("billing_webhook_events")
+        .select("processed_at")
+        .eq("provider_event_id", providerEventId)
+        .maybeSingle();
+
+      if (existing?.processed_at) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
     }
 
     const referenceId = firstString(
@@ -105,37 +115,40 @@ export async function POST(request: Request) {
     const status = String(
       payload.status ?? data.status ?? eventName ?? ""
     ).toUpperCase();
-    const paid = [
-      "PAID",
-      "SUCCEEDED",
-      "SUCCESS",
-      "COMPLETED",
-      "ACTIVE",
-    ].some((value) => status.includes(value));
-    const failed = [
-      "EXPIRED",
-      "FAILED",
-      "CANCELLED",
-      "CANCELED",
-    ].some((value) => status.includes(value));
+    const { paid, failed, expired } = classifyStatus(status);
 
     const { data: order } = await supabase
       .from("billing_orders")
-      .select("id, user_id, plan_id, status")
+      .select("id, user_id, plan_id, status, amount")
       .eq("id", referenceId)
       .maybeSingle();
 
-    if (!order) {
+    // Only pending orders can change state. Stops a late "expired"
+    // event from downgrading a paid order, and replays from re-granting.
+    if (!order || order.status !== "pending") {
+      await markProcessed(providerEventId);
       return NextResponse.json({ received: true });
+    }
+
+    const paidAmount = Number(data.amount ?? payload.amount);
+    if (paid && Number.isFinite(paidAmount) && paidAmount !== order.amount) {
+      console.error("Billing webhook amount mismatch", {
+        orderId: order.id,
+        expected: order.amount,
+        received: paidAmount,
+      });
+      // Never grant access; acknowledge so Xendit stops retrying and
+      // leave the order pending for manual review.
+      await markProcessed(providerEventId);
+      return NextResponse.json({ received: true, processed: false });
     }
 
     if (failed) {
       await supabase
         .from("billing_orders")
-        .update({
-          status: status.includes("EXPIRED") ? "expired" : "failed",
-        })
-        .eq("id", order.id);
+        .update({ status: expired ? "expired" : "failed" })
+        .eq("id", order.id)
+        .eq("status", "pending");
     }
 
     if (paid) {
@@ -149,15 +162,7 @@ export async function POST(request: Request) {
           ? addMonths(now, 12)
           : null;
 
-      await supabase
-        .from("billing_orders")
-        .update({
-          status: "paid",
-          paid_at: now.toISOString(),
-        })
-        .eq("id", order.id);
-
-      await supabase.from("billing_entitlements").upsert(
+      const { error: entitlementError } = await supabase.from("billing_entitlements").upsert(
         {
           user_id: order.user_id,
           order_id: order.id,
@@ -170,17 +175,27 @@ export async function POST(request: Request) {
         },
         { onConflict: "order_id" }
       );
+      if (entitlementError) throw entitlementError;
 
-      await supabase
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({ plan: "premium" })
         .eq("id", order.user_id);
+      if (profileError) throw profileError;
+
+      // Flip the order last: if anything above fails, the retry still
+      // sees a pending order and redoes the (idempotent) grant.
+      await supabase
+        .from("billing_orders")
+        .update({
+          status: "paid",
+          paid_at: now.toISOString(),
+        })
+        .eq("id", order.id)
+        .eq("status", "pending");
     }
 
-    await supabase
-      .from("billing_webhook_events")
-      .update({ processed_at: new Date().toISOString() })
-      .eq("provider_event_id", providerEventId);
+    await markProcessed(providerEventId);
 
     return NextResponse.json({ received: true, processed: paid });
   } catch (error) {

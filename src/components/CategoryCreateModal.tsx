@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type CategoryType = "income" | "expense";
@@ -19,8 +19,13 @@ type Props = {
   allowTypeSelection?: boolean;
 };
 
-export default function CategoryCreateModal({
-  open,
+// The form only mounts while open, so every open starts with fresh state.
+export default function CategoryCreateModal(props: Props) {
+  if (!props.open) return null;
+  return <CategoryCreateForm {...props} />;
+}
+
+function CategoryCreateForm({
   onClose,
   onCreated,
   defaultType = "expense",
@@ -30,16 +35,6 @@ export default function CategoryCreateModal({
   const [type, setType] = useState<CategoryType>(defaultType);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    setName("");
-    setType(defaultType);
-    setSaving(false);
-    setErrorMessage("");
-  }, [open, defaultType]);
-
-  if (!open) return null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -170,9 +165,9 @@ export default function CategoryCreateModal({
                 maxLength={40}
                 autoFocus
                 required
-                className="w-full rounded-2xl border border-[#DDE6D7] bg-white/70 px-4 py-3.5 text-sm text-[#173C34] outline-none focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                className="w-full rounded-2xl border border-[#DDE6D7] bg-white/70 px-4 py-3.5 text-sm text-[#173C34] outline-none hover:border-[#C8D8BE] focus:border-[#214F43] focus:bg-white focus:ring-4 focus:ring-[#214F43]/10"
               />
-              <p className="mt-2 text-xs text-[#8B9A92]">2–40 characters.</p>
+              <p className="mt-2 text-xs text-[#8B9A92]">2 to 40 characters.</p>
             </div>
 
             {allowTypeSelection ? (

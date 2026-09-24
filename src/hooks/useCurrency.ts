@@ -51,24 +51,20 @@ export function useCurrency() {
         const response = await fetch(
           `/api/currency?target=${selectedCurrency}`
         );
+        const result = response.ok ? await response.json() : null;
+        const loadedRate = Number(result?.rate);
 
-        if (!response.ok) {
-          throw new Error(
-            "Failed to load currency rate"
-          );
+        if (!Number.isFinite(loadedRate) || loadedRate <= 0) {
+          throw new Error("Failed to load currency rate");
         }
 
-        const result = await response.json();
-
-        if (Number.isFinite(result.rate)) {
-          setRate(Number(result.rate));
-        }
+        setRate(loadedRate);
       } catch (error) {
-        console.error(
-          "Failed to load currency rate:",
-          error
-        );
-
+        // Never fall back to rate 1 in a foreign currency: Rp 50,000
+        // would show as $50,000 and a $50 entry would save as Rp 50.
+        // Showing IDR is always correct.
+        console.error("Failed to load currency rate:", error);
+        setCurrency("IDR");
         setRate(1);
       }
 

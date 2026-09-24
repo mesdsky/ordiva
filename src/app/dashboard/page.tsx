@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
+import { Leaf } from "@/components/landing/icons";
+import PageLoader from "@/components/app/PageLoader";
 import { useRouter } from "next/navigation";
 import {
   LineChart,
@@ -1001,21 +1003,7 @@ export default function DashboardPage() {
   }
 
   if (loading || currencyLoading) {
-    return (
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F5F2E8]">
-        <div className="absolute h-64 w-64 rounded-full bg-[#AFC1A4]/15 blur-3xl" />
-
-        <div className="relative rounded-[1.75rem] border border-white/70 bg-white/60 px-8 py-6 shadow-[0_20px_50px_rgba(23,60,52,0.08)] backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-3 w-3 animate-pulse rounded-full bg-[#214F43]" />
-
-            <p className="text-sm font-medium text-[#5F7168]">
-              Preparing your dashboard...
-            </p>
-          </div>
-        </div>
-      </main>
-    );
+    return <PageLoader label="Preparing your dashboard..." />;
   }
 
   const hasBudget = budgetSummary.totalBudget > 0;
@@ -1086,14 +1074,14 @@ export default function DashboardPage() {
     !goalSummary
       ? null
       : goalSummary.remaining <= 0
-      ? "Goal reached. Nice work — you can celebrate this milestone."
+      ? "Goal reached. Nice work, you can celebrate this milestone."
       : goalDaysRemaining === null
       ? "Set a target date to see the monthly pace needed to reach this goal."
       : goalDaysRemaining < 0
       ? "This goal is past its target date. Consider updating the timeline or adding to it soon."
       : goalDaysRemaining <= 30
       ? "This goal is due soon. Keep the next few contributions focused."
-      : `Aim for about ${goalMonthlyPace ? formatCurrency(Math.round(goalMonthlyPace)) : "—"} per month to reach your target.`;
+      : `Aim for about ${goalMonthlyPace ? formatCurrency(Math.round(goalMonthlyPace)) : "-"} per month to reach your target.`;
 
   const hasSubscriptions =
     subscriptionSummary.activeCount > 0;
@@ -1251,7 +1239,7 @@ export default function DashboardPage() {
               <h1 className="text-5xl font-semibold leading-[0.96] tracking-[-0.045em] text-white sm:text-6xl md:text-7xl">
                 {getGreeting()},
                 <br />
-                <span className="text-[#C8D8BE]">
+                <span className="font-serif font-normal tracking-[-0.02em] text-[#C8D8BE] italic">
                   {name}.
                 </span>
               </h1>
@@ -2335,7 +2323,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8EEDB] text-[#214F43]">
-                        ✦
+                        <Leaf className="h-4 w-4" />
                       </div>
                     </div>
 

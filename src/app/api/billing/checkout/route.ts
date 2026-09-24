@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       currency: "IDR",
       amount: plan.amount,
       country: "ID",
-      locale: "id",
+      locale: "en",
       customer: {
         reference_id: `cust-${order.id}`,
         type: "INDIVIDUAL",
@@ -166,7 +166,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Billing checkout error", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Checkout failed" },
+      { error: "Checkout failed. Please try again." },
       { status: 500 }
     );
   }

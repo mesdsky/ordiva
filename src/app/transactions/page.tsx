@@ -4,8 +4,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
+import PageHero, { HeroStat, heroButton } from "@/components/app/PageHero";
+import PageLoader from "@/components/app/PageLoader";
+import Segmented from "@/components/app/Segmented";
+import { featureIcons } from "@/components/landing/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
+import { todayLocal } from "@/lib/date";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
@@ -25,6 +30,8 @@ type Category = {
   id: string;
   name: string;
   type: "income" | "expense";
+  icon?: string | null;
+  color?: string | null;
 };
 
 export default function TransactionsPage() {
@@ -56,7 +63,7 @@ export default function TransactionsPage() {
   const [description, setDescription] = useState("");
 
   const [transactionDate, setTransactionDate] = useState(
-    new Date().toISOString().split("T")[0]
+    todayLocal()
   );
 
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -66,6 +73,9 @@ export default function TransactionsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
 
   useEffect(() => {
     async function loadData() {
@@ -98,7 +108,7 @@ export default function TransactionsPage() {
 
         supabase
           .from("categories")
-          .select("id, name, type")
+          .select("id, name, type, icon, color")
           .order("name", {
             ascending: true,
           }),
@@ -146,7 +156,7 @@ export default function TransactionsPage() {
     setDescription("");
 
     setTransactionDate(
-      new Date().toISOString().split("T")[0]
+      todayLocal()
     );
 
     setPaymentMethod("");
@@ -405,149 +415,142 @@ export default function TransactionsPage() {
   }
 
   if (loading || currencyLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8]">
-        <p className="text-[#7B9685]">
-          Loading your transactions...
-        </p>
-      </main>
-    );
+    return <PageLoader label="Loading your transactions..." />;
   }
 
   const transactionToDelete = transactions.find(
     (transaction) => transaction.id === deletingId
   );
 
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+
+  // This month's totals for the hero.
+  const thisMonth = todayLocal().slice(0, 7);
+  let monthIncome = 0;
+  let monthExpense = 0;
+  for (const transaction of transactions) {
+    if (!transaction.transaction_date.startsWith(thisMonth)) continue;
+    if (transaction.type === "income") monthIncome += Number(transaction.amount);
+    else monthExpense += Number(transaction.amount);
+  }
+  const monthNet = monthIncome - monthExpense;
+
+  // Search + type filter, then group by date (list is already newest first).
+  const query = search.trim().toLowerCase();
+  const visibleTransactions = transactions.filter((transaction) => {
+    if (typeFilter !== "all" && transaction.type !== typeFilter) return false;
+    if (!query) return true;
+    const categoryName = transaction.category_id
+      ? categoryById.get(transaction.category_id)?.name ?? ""
+      : "";
+    return (
+      transaction.description.toLowerCase().includes(query) ||
+      categoryName.toLowerCase().includes(query)
+    );
+  });
+  const groups: { date: string; items: Transaction[] }[] = [];
+  for (const transaction of visibleTransactions) {
+    const last = groups[groups.length - 1];
+    if (last && last.date === transaction.transaction_date) last.items.push(transaction);
+    else groups.push({ date: transaction.transaction_date, items: [transaction] });
+  }
+
+  const inputClass =
+    "w-full rounded-2xl border border-line bg-[#F9F8F2] px-4 py-3.5 outline-none transition hover:border-mint focus:border-forest focus:bg-white focus:ring-4 focus:ring-forest/10";
+
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[170px] bg-[linear-gradient(180deg,#DDE8D8_0%,#F0F1E8_42%,#F5F2E8_100%)]"
-      />
-
       <Navigation />
 
-      <main className="relative z-10 min-h-screen bg-[#F5F2E8] text-[#173C34]">
-        <div className="mx-auto max-w-7xl px-6 py-10 md:px-12">
+      <main className="relative min-h-screen bg-cream text-ink">
+        <div className="app-enter mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-12">
+          <PageHero
+            eyebrow="Transactions"
+            title="Every transaction,"
+            accent="in its place."
+            description="Track your income and expenses, and see where your money goes."
+            actions={
+              <button type="button" onClick={scrollToTransactionForm} className={heroButton}>
+                <span className="text-base leading-none transition-transform duration-300 group-hover:rotate-90">+</span>
+                New transaction
+              </button>
+            }
+            aside={
+              <HeroStat
+                label="Net this month"
+                value={`${monthNet < 0 ? "-" : "+"} ${formatCurrency(Math.abs(monthNet))}`}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-white/50">Money in</p>
+                    <p className="mt-1 font-semibold break-words text-mint">{formatCurrency(monthIncome)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-white/50">Money out</p>
+                    <p className="mt-1 font-semibold break-words text-white">{formatCurrency(monthExpense)}</p>
+                  </div>
+                </div>
+              </HeroStat>
+            }
+          />
 
-          {/* HEADER */}
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7B9685]">
-                Ordiva Transactions
-              </p>
-
-              <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-                Transactions
-              </h1>
-
-              <p className="mt-3 text-lg text-[#5F7168]">
-                Track your income and expenses.
-              </p>
-            </div>
-          </div>
-
-          {/* MAIN CONTENT */}
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-[420px_1fr]">
-
+          <div className="mt-6 grid gap-6 lg:grid-cols-[420px_1fr]">
             {/* ADD / EDIT */}
-
             <section
               id="transaction-form"
-              className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm"
+              className={`app-card scroll-mt-28 rounded-[1.75rem] border bg-white/70 p-5 sm:p-6 ${
+                editingId ? "border-forest/40 ring-4 ring-forest/5" : "border-line"
+              }`}
             >
-              <div className="mb-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold">
-                      {editingId
-                        ? "Edit transaction"
-                        : "Add transaction"}
-                    </h2>
-
-                    <p className="mt-1 text-sm text-[#7B9685]">
-                      {editingId
-                        ? "Update your transaction details."
-                        : "Record your latest financial activity."}
-                    </p>
-                  </div>
-
-                  {editingId && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="text-sm font-semibold text-[#7B9685] transition hover:text-[#214F43]"
-                    >
-                      Cancel
-                    </button>
-                  )}
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                    {editingId ? "Edit transaction" : "Add transaction"}
+                  </h2>
+                  <p className="mt-1 text-sm text-sage">
+                    {editingId ? "Update your transaction details." : "Record your latest financial activity."}
+                  </p>
                 </div>
+
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-slate transition hover:bg-mist hover:text-forest"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
 
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-5"
-              >
-                {/* TYPE */}
-
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <p className="mb-2 text-sm font-semibold">
-                    Transaction type
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setType("expense");
-                        markFormDirty();
-                      }}
-                      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                        type === "expense"
-                          ? "border-[#214F43] bg-[#E8EEDB]"
-                          : "border-[#DDE6D7] bg-[#F9F8F2] hover:bg-[#E8EEDB]"
-                      }`}
-                    >
-                      Expense
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setType("income");
-                        markFormDirty();
-                      }}
-                      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                        type === "income"
-                          ? "border-[#214F43] bg-[#E8EEDB]"
-                          : "border-[#DDE6D7] bg-[#F9F8F2] hover:bg-[#E8EEDB]"
-                      }`}
-                    >
-                      Income
-                    </button>
-                  </div>
+                  <p className="mb-2 text-sm font-semibold">Transaction type</p>
+                  <Segmented
+                    value={type}
+                    options={[
+                      { value: "expense", label: "Expense" },
+                      { value: "income", label: "Income" },
+                    ]}
+                    onChange={(value) => {
+                      setType(value as "income" | "expense");
+                      markFormDirty();
+                    }}
+                  />
                 </div>
-
-                {/* CATEGORY */}
 
                 <div>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <label
-                      htmlFor="category"
-                      className="block text-sm font-semibold"
-                    >
+                    <label htmlFor="category" className="block text-sm font-semibold">
                       Category
                     </label>
-
                     <button
                       type="button"
                       onClick={() => {
                         setCategoryModalOpen(true);
                         setMessage("");
                       }}
-                      className="text-xs font-semibold text-[#214F43] hover:text-[#173C34]"
+                      className="rounded-full px-2 py-1 text-xs font-semibold text-forest transition hover:bg-mist"
                     >
                       + New category
                     </button>
@@ -561,37 +564,30 @@ export default function TransactionsPage() {
                       markFormDirty();
                     }}
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className={inputClass}
                   >
                     <option value="">Select category</option>
-
                     {filteredCategories.map((category) => (
                       <option key={category.id} value={category.id}>
+                        {category.icon ? `${category.icon}  ` : ""}
                         {category.name}
                       </option>
                     ))}
                   </select>
 
                   {filteredCategories.length === 0 && (
-                    <p className="mt-2 text-xs text-[#7B9685]">
-                      No {type} categories yet. Create your first one.
-                    </p>
+                    <p className="mt-2 text-xs text-sage">No {type} categories yet. Create your first one.</p>
                   )}
                 </div>
 
-                {/* AMOUNT */}
-
                 <div>
-                  <label
-                    htmlFor="amount"
-                    className="mb-2 block text-sm font-semibold"
-                  >
+                  <label htmlFor="amount" className="mb-2 block text-sm font-semibold">
                     Amount ({currency})
                   </label>
-
                   <input
                     id="amount"
                     type="number"
+                    inputMode="decimal"
                     min="0.01"
                     step="0.01"
                     value={amount}
@@ -599,31 +595,17 @@ export default function TransactionsPage() {
                       setAmount(e.target.value);
                       markFormDirty();
                     }}
-                    placeholder={
-                      currency === "IDR"
-                        ? "50000"
-                        : "50"
-                    }
+                    placeholder={currency === "IDR" ? "50000" : "50"}
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className={`${inputClass} text-lg font-semibold tabular-nums`}
                   />
-
-                  <p className="mt-2 text-xs text-[#7B9685]">
-                    Amounts are stored securely in
-                    IDR and converted automatically.
-                  </p>
+                  <p className="mt-2 text-xs text-sage">Amounts are stored securely in IDR and converted automatically.</p>
                 </div>
 
-                {/* DESCRIPTION */}
-
                 <div>
-                  <label
-                    htmlFor="description"
-                    className="mb-2 block text-sm font-semibold"
-                  >
+                  <label htmlFor="description" className="mb-2 block text-sm font-semibold">
                     Description
                   </label>
-
                   <input
                     id="description"
                     type="text"
@@ -634,132 +616,71 @@ export default function TransactionsPage() {
                     }}
                     placeholder="Lunch, salary, transport..."
                     required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className={inputClass}
                   />
                 </div>
 
-                {/* DATE */}
-
-                <div>
-                  <label
-                    htmlFor="transactionDate"
-                    className="mb-2 block text-sm font-semibold"
-                  >
-                    Date
-                  </label>
-
-                  <input
-                    id="transactionDate"
-                    type="date"
-                    value={transactionDate}
-                    onChange={(e) => {
-                      setTransactionDate(e.target.value);
-                      markFormDirty();
-                    }}
-                    required
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
-                  />
-                </div>
-
-                {/* PAYMENT */}
-
-                <div>
-                  <label
-                    htmlFor="paymentMethod"
-                    className="mb-2 block text-sm font-semibold"
-                  >
-                    Payment method
-                  </label>
-
-                  <select
-                    id="paymentMethod"
-                    value={paymentMethod}
-                    onChange={(e) => {
-                      setPaymentMethod(e.target.value);
-                      markFormDirty();
-                    }}
-                    className="w-full rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
-                  >
-                    <option value="">
-                      Select payment method
-                    </option>
-
-                    <option value="cash">
-                      Cash
-                    </option>
-
-                    <option value="bank_transfer">
-                      Bank transfer
-                    </option>
-
-                    <option value="debit_card">
-                      Debit card
-                    </option>
-
-                    <option value="credit_card">
-                      Credit card
-                    </option>
-
-                    <option value="e_wallet">
-                      E-wallet
-                    </option>
-
-                    <option value="other">
-                      Other
-                    </option>
-                  </select>
-                </div>
-
-                {/* NEED / WANT */}
-
-                <div>
-                  <p className="mb-2 text-sm font-semibold">
-                    Need or want?
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNeedWant("need");
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <div>
+                    <label htmlFor="transactionDate" className="mb-2 block text-sm font-semibold">
+                      Date
+                    </label>
+                    <input
+                      id="transactionDate"
+                      type="date"
+                      value={transactionDate}
+                      onChange={(e) => {
+                        setTransactionDate(e.target.value);
                         markFormDirty();
                       }}
-                      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                        needWant === "need"
-                          ? "border-[#214F43] bg-[#E8EEDB]"
-                          : "border-[#DDE6D7] bg-[#F9F8F2] hover:bg-[#E8EEDB]"
-                      }`}
-                    >
-                      Need
-                    </button>
+                      required
+                      className={inputClass}
+                    />
+                  </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNeedWant("want");
+                  <div>
+                    <label htmlFor="paymentMethod" className="mb-2 block text-sm font-semibold">
+                      Payment method
+                    </label>
+                    <select
+                      id="paymentMethod"
+                      value={paymentMethod}
+                      onChange={(e) => {
+                        setPaymentMethod(e.target.value);
                         markFormDirty();
                       }}
-                      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                        needWant === "want"
-                          ? "border-[#214F43] bg-[#E8EEDB]"
-                          : "border-[#DDE6D7] bg-[#F9F8F2] hover:bg-[#E8EEDB]"
-                      }`}
+                      className={inputClass}
                     >
-                      Want
-                    </button>
+                      <option value="">Select method</option>
+                      <option value="cash">Cash</option>
+                      <option value="bank_transfer">Bank transfer</option>
+                      <option value="debit_card">Debit card</option>
+                      <option value="credit_card">Credit card</option>
+                      <option value="e_wallet">E-wallet</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* NOTES */}
+                <div>
+                  <p className="mb-2 text-sm font-semibold">Need or want?</p>
+                  <Segmented
+                    value={needWant}
+                    options={[
+                      { value: "need", label: "Need" },
+                      { value: "want", label: "Want" },
+                    ]}
+                    onChange={(value) => {
+                      setNeedWant(value);
+                      markFormDirty();
+                    }}
+                  />
+                </div>
 
                 <div>
-                  <label
-                    htmlFor="notes"
-                    className="mb-2 block text-sm font-semibold"
-                  >
+                  <label htmlFor="notes" className="mb-2 block text-sm font-semibold">
                     Notes
                   </label>
-
                   <textarea
                     id="notes"
                     value={notes}
@@ -769,25 +690,20 @@ export default function TransactionsPage() {
                     }}
                     placeholder="Optional notes..."
                     rows={3}
-                    className="w-full resize-none rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] px-4 py-3.5 outline-none transition focus:border-[#7B9685] focus:ring-2 focus:ring-[#DDE6D7]"
+                    className={`${inputClass} resize-none`}
                   />
                 </div>
 
                 {message && (
-                  <div className="rounded-2xl bg-[#E8EEDB] px-4 py-3 text-sm text-[#214F43]">
+                  <div role="status" className="menu-pop rounded-2xl bg-mist px-4 py-3 text-sm text-forest">
                     {message}
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  disabled={
-                    saving ||
-                    (currency !== "IDR" &&
-                      (!Number.isFinite(rate) ||
-                        rate <= 0))
-                  }
-                  className="w-full rounded-2xl bg-[#214F43] px-5 py-3.5 font-semibold text-white transition hover:bg-[#173C34] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={saving || (currency !== "IDR" && (!Number.isFinite(rate) || rate <= 0))}
+                  className="w-full rounded-2xl bg-forest px-5 py-3.5 font-semibold text-white shadow-[0_12px_28px_rgba(33,79,67,0.22)] transition hover:-translate-y-0.5 hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   {saving
                     ? editingId
@@ -800,158 +716,157 @@ export default function TransactionsPage() {
               </form>
             </section>
 
-            {/* RECENT TRANSACTIONS */}
-
-            <section className="rounded-3xl border border-[#DDE6D7] bg-white/70 p-6 shadow-sm">
-              <div className="mb-6 flex items-center justify-between">
+            {/* TRANSACTION LIST */}
+            <section className="app-card min-w-0 rounded-[1.75rem] border border-line bg-white/70 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold">
-                    Recent transactions
-                  </h2>
-
-                  <p className="mt-1 text-sm text-[#7B9685]">
-                    Your latest financial activity.
-                  </p>
+                  <h2 className="text-xl font-semibold tracking-[-0.02em]">Recent transactions</h2>
+                  <p className="mt-1 text-sm text-sage">Your latest financial activity.</p>
                 </div>
-
-                <span className="rounded-full bg-[#E8EEDB] px-3 py-1 text-xs font-semibold text-[#214F43]">
-                  {transactions.length} total
+                <span className="rounded-full bg-mist px-3 py-1 text-xs font-semibold text-forest tabular-nums">
+                  {visibleTransactions.length === transactions.length
+                    ? `${transactions.length} total`
+                    : `${visibleTransactions.length} of ${transactions.length}`}
                 </span>
               </div>
 
+              {transactions.length > 0 && (
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <label className="relative flex-1">
+                    <span className="sr-only">Search transactions</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-sage"
+                      aria-hidden="true"
+                    >
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-3.5-3.5" />
+                    </svg>
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search description or category"
+                      className="w-full rounded-full border border-line bg-[#F9F8F2] py-2.5 pr-4 pl-10 text-sm outline-none transition hover:border-mint focus:border-forest focus:bg-white focus:ring-4 focus:ring-forest/10"
+                    />
+                  </label>
+                  <div className="sm:w-64">
+                    <Segmented
+                      small
+                      value={typeFilter}
+                      options={[
+                        { value: "all", label: "All" },
+                        { value: "income", label: "Income" },
+                        { value: "expense", label: "Expense" },
+                      ]}
+                      onChange={(value) => setTypeFilter(value as "all" | "income" | "expense")}
+                    />
+                  </div>
+                </div>
+              )}
+
               {transactions.length === 0 ? (
-                /* =================================================
-                   EMPTY STATE
-                ================================================== */
-
-                <div className="flex min-h-[430px] items-center justify-center rounded-2xl bg-[#F9F8F2] px-6 py-10">
+                <div className="mt-6 flex min-h-[430px] items-center justify-center rounded-2xl bg-[#F9F8F2] px-6 py-10">
                   <div className="max-w-sm text-center">
-
-                    {/* Icon */}
-
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.35rem] bg-[#E8EEDB] text-2xl text-[#214F43] shadow-sm">
-                      ↗
+                    <div className="float mx-auto flex h-16 w-16 items-center justify-center rounded-[1.35rem] bg-mist text-forest shadow-sm [&_svg]:h-6 [&_svg]:w-6">
+                      {featureIcons.transactions}
                     </div>
-
-                    <p className="mt-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7B9685]">
+                    <p className="mt-7 text-[10px] font-semibold tracking-[0.22em] text-sage uppercase">
                       Your financial space is ready
                     </p>
-
                     <h3 className="mt-3 text-2xl font-semibold tracking-[-0.025em]">
-                      Start with your first transaction.
+                      Start with your first <span className="font-serif font-normal italic">transaction.</span>
                     </h3>
-
-                    <p className="mt-3 text-sm leading-6 text-[#5F7168]">
-                      Record an income or expense to
-                      start understanding where your
-                      money goes.
+                    <p className="mt-3 text-sm leading-6 text-slate">
+                      Record an income or expense to start understanding where your money goes.
                     </p>
-
                     <button
                       type="button"
                       onClick={scrollToTransactionForm}
-                      className="mt-7 rounded-full bg-[#214F43] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(33,79,67,0.14)] transition hover:-translate-y-0.5 hover:bg-[#173C34]"
+                      className="mt-7 rounded-full bg-forest px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(33,79,67,0.14)] transition hover:-translate-y-0.5 hover:bg-ink"
                     >
                       Add your first transaction
-                      <span className="ml-2">
-                        →
-                      </span>
                     </button>
-
-                    <div className="mx-auto mt-7 max-w-xs border-t border-[#DDE6D7] pt-5">
-                      <p className="text-[11px] leading-5 text-[#8B9A92]">
-                        Your transactions will help power
-                        your budgets, spending insights,
-                        goals, and reports.
-                      </p>
-                    </div>
                   </div>
                 </div>
+              ) : groups.length === 0 ? (
+                <div className="mt-6 rounded-2xl bg-[#F9F8F2] px-6 py-12 text-center">
+                  <p className="font-semibold">No transactions match.</p>
+                  <p className="mt-1 text-sm text-sage">Try a different search or filter.</p>
+                </div>
               ) : (
-                <div className="space-y-3">
-                  {transactions.map(
-                    (transaction) => {
-                      const category =
-                        categories.find(
-                          (item) =>
-                            item.id ===
-                            transaction.category_id
-                        );
+                <div className="mt-6 space-y-6">
+                  {groups.map((group) => (
+                    <div key={group.date}>
+                      <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.16em] text-sage uppercase">
+                        {formatDayLabel(group.date)}
+                      </p>
+                      <div className="app-list space-y-2">
+                        {group.items.map((transaction) => {
+                          const category = transaction.category_id
+                            ? categoryById.get(transaction.category_id)
+                            : undefined;
+                          const income = transaction.type === "income";
+                          const tint =
+                            category?.color && /^#[0-9a-f]{6}$/i.test(category.color)
+                              ? `${category.color}40`
+                              : undefined;
 
-                      return (
-                        <div
-                          key={transaction.id}
-                          className="rounded-2xl border border-[#DDE6D7] bg-[#F9F8F2] p-4"
-                        >
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <p className="font-semibold">
-                                {
-                                  transaction.description
-                                }
-                              </p>
-
-                              <p className="mt-1 text-xs text-[#7B9685]">
-                                {category?.name ||
-                                  "Uncategorized"}
-                                {" · "}
-                                {
-                                  transaction.transaction_date
-                                }
-
-                                {transaction.payment_method
-                                  ? ` · ${transaction.payment_method.replace(
-                                      "_",
-                                      " "
-                                    )}`
-                                  : ""}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <p className="text-lg font-bold text-[#173C34]">
-                                {transaction.type ===
-                                "income"
-                                  ? "+"
-                                  : "-"}{" "}
-                                {formatCurrency(
-                                  Number(
-                                    transaction.amount
-                                  )
-                                )}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 flex gap-2 border-t border-[#DDE6D7] pt-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                startEditing(
-                                  transaction
-                                )
-                              }
-                              className="rounded-xl border border-[#DDE6D7] px-4 py-2 text-xs font-semibold text-[#214F43] transition hover:bg-[#E8EEDB]"
+                          return (
+                            <div
+                              key={transaction.id}
+                              className={`group flex items-center gap-3 rounded-2xl border p-3 transition duration-300 hover:border-line hover:bg-white hover:shadow-[0_12px_30px_-18px_rgba(23,60,52,0.3)] sm:gap-4 sm:p-3.5 ${
+                                editingId === transaction.id ? "border-forest/40 bg-white" : "border-transparent bg-[#F9F8F2]"
+                              }`}
                             >
-                              Edit
-                            </button>
+                              <span
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mist text-lg transition-transform duration-300 group-hover:scale-105"
+                                style={tint ? { background: tint } : undefined}
+                                aria-hidden="true"
+                              >
+                                {category?.icon || (category?.name ?? "?").charAt(0)}
+                              </span>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openDeleteModal(
-                                  transaction.id
-                                )
-                              }
-                              className="rounded-xl border border-[#E8D7D7] px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-[#FDECEC]"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-                  )}
+                              {/* Mobile: amount sits under the description so the name has room. */}
+                              <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate font-semibold">{transaction.description}</p>
+                                  <p className="mt-0.5 truncate text-xs text-sage">
+                                    {category?.name || "Uncategorized"}
+                                    {transaction.payment_method
+                                      ? ` · ${transaction.payment_method.replace("_", " ")}`
+                                      : ""}
+                                    {transaction.need_want ? ` · ${transaction.need_want}` : ""}
+                                  </p>
+                                </div>
+
+                                <p
+                                  className={`mt-1 shrink-0 text-sm font-semibold tabular-nums sm:mt-0 sm:text-right sm:text-lg ${
+                                    income ? "text-forest" : "text-ink"
+                                  }`}
+                                >
+                                  {income ? "+" : "-"} {formatCurrency(Number(transaction.amount))}
+                                </p>
+                              </div>
+
+                              <div className="flex shrink-0 gap-1 transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                                <IconButton label={`Edit ${transaction.description}`} onClick={() => startEditing(transaction)}>
+                                  <path d="M16.9 4.6a2 2 0 0 1 2.8 2.8L8 19.1l-4 1 1-4Z" />
+                                </IconButton>
+                                <IconButton danger label={`Delete ${transaction.description}`} onClick={() => openDeleteModal(transaction.id)}>
+                                  <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+                                </IconButton>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
@@ -1000,5 +915,49 @@ export default function TransactionsPage() {
         onCancel={closeDeleteModal}
       />
     </>
+  );
+}
+
+function formatDayLabel(date: string) {
+  const today = todayLocal();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date === today) return "Today";
+  if (date === todayLocal(yesterday)) return "Yesterday";
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: date.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",
+  });
+}
+
+function IconButton({
+  label,
+  onClick,
+  danger = false,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label.split(" ")[0]}
+      className={`flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white transition hover:-translate-y-0.5 ${
+        danger ? "text-red-700 hover:border-[#E8D7D7] hover:bg-[#FDECEC]" : "text-forest hover:bg-mist"
+      }`}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+        {children}
+      </svg>
+    </button>
   );
 }

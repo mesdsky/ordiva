@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
     if (data.user) {
       setMessage(
-        "Account berhasil dibuat! Cek email kamu untuk verifikasi."
+        "Account created! Check your email to verify your address."
       );
     }
 

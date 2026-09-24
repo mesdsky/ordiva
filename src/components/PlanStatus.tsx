@@ -26,7 +26,7 @@ function PlanStatus({
         Current plan
       </span>
       <span className="text-xs font-bold">
-        {isPremium ? "Premium ✦" : "Free"}
+        {isPremium ? "Premium" : "Free"}
       </span>
     </div>
   );

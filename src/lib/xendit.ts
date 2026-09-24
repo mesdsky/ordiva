@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 const XENDIT_BASE_URL = "https://api.xendit.co";
 
 export type XenditSessionResponse = {
@@ -51,5 +53,22 @@ export function appUrl() {
 export function assertXenditWebhook(request: Request) {
   const expected = process.env.XENDIT_WEBHOOK_TOKEN;
   if (!expected) throw new Error("XENDIT_WEBHOOK_TOKEN is not configured");
-  return request.headers.get("x-callback-token") === expected;
+  const received = request.headers.get("x-callback-token") ?? "";
+  // Hash both sides so lengths match and the compare is constant-time.
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  return timingSafeEqual(digest(received), digest(expected));
 }
+
+// Match whole words only: "UNPAID".includes("PAID") and
+// "INACTIVE".includes("ACTIVE") are both true.
+export function classifyStatus(status: string) {
+  const words = new Set(status.toUpperCase().split(/[^A-Z]+/));
+  const has = (...values: string[]) => values.some((v) => words.has(v));
+  const failed = has("EXPIRED", "FAILED", "CANCELLED", "CANCELED");
+  return {
+    paid: !failed && has("PAID", "SUCCEEDED", "SUCCESS", "COMPLETED", "SETTLED", "CAPTURED"),
+    failed,
+    expired: has("EXPIRED"),
+  };
+}
+
