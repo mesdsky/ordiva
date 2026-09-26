@@ -153,13 +153,28 @@ export async function POST(request: Request) {
 
     if (paid) {
       const now = new Date();
+
+      // Renewing early extends the current period instead of
+      // throwing away the days already paid for.
+      const { data: current } = await supabase
+        .from("billing_entitlements")
+        .select("ends_at")
+        .eq("user_id", order.user_id)
+        .eq("status", "active")
+        .neq("order_id", order.id)
+        .gt("ends_at", now.toISOString())
+        .order("ends_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const periodStart = current?.ends_at ? new Date(current.ends_at) : now;
+
       const endsAt =
         order.plan_id === "monthly"
-          ? addMonths(now, 1)
+          ? addMonths(periodStart, 1)
           : order.plan_id === "three-months"
-          ? addMonths(now, 3)
+          ? addMonths(periodStart, 3)
           : order.plan_id === "yearly"
-          ? addMonths(now, 12)
+          ? addMonths(periodStart, 12)
           : null;
 
       const { error: entitlementError } = await supabase.from("billing_entitlements").upsert(
