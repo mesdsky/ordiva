@@ -1,5 +1,5 @@
 -- Performance fixes from the Supabase advisors (2026-09-26 review).
--- Not applied automatically: run in the SQL editor or `supabase db push`.
+-- Applied to the ordiva v1 project on 2026-09-26.
 -- Access rules are unchanged; only how they are evaluated.
 
 -- 1. Evaluate auth.uid() once per query instead of once per row.
