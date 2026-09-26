@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export async function updateSession(request: NextRequest) {
 
@@ -89,7 +91,7 @@ export async function updateSession(request: NextRequest) {
     await supabase
       .from("profiles")
       .select(
-        "full_name, account_type, currency, financial_goal"
+        "full_name, account_type, currency, financial_goal, plan"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -145,5 +147,54 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (profile.plan === "premium") {
+    await expireLapsedPremium(supabase, user.id);
+  }
+
   return supabaseResponse;
+}
+
+// Nothing else turns premium off when a paid period ends, so check on
+// navigation. Accounts with no entitlements at all were granted premium
+// by hand and are left alone.
+async function expireLapsedPremium(
+  supabase: SupabaseClient,
+  userId: string
+) {
+  try {
+    const { data: entitlements, error } = await supabase
+      .from("billing_entitlements")
+      .select("id, status, ends_at")
+      .eq("user_id", userId);
+
+    if (error || !entitlements || entitlements.length === 0) return;
+
+    const now = Date.now();
+    const current = entitlements.some(
+      (e) =>
+        e.status === "active" &&
+        (e.ends_at === null || new Date(e.ends_at).getTime() > now)
+    );
+
+    if (current) return;
+
+    const admin = createAdminClient();
+    const nowIso = new Date(now).toISOString();
+
+    await admin
+      .from("billing_entitlements")
+      .update({ status: "expired" })
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .lte("ends_at", nowIso);
+
+    await admin
+      .from("profiles")
+      .update({ plan: "free" })
+      .eq("id", userId)
+      .eq("plan", "premium");
+  } catch (error) {
+    // Never block navigation over this; the next request retries.
+    console.error("Premium expiry check failed", error);
+  }
 }
