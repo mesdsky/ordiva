@@ -164,7 +164,7 @@ export default function GoalsPage() {
     if (hasReachedGoalLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -188,7 +188,7 @@ export default function GoalsPage() {
 
     if (hasReachedGoalLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -222,8 +222,17 @@ export default function GoalsPage() {
       return;
     }
 
-    if (!numericTarget || numericTarget <= 0) {
+    if (
+      !Number.isFinite(numericTarget) ||
+      numericTarget <= 0
+    ) {
       setErrorMessage("Target amount must be greater than zero.");
+      setSaving(false);
+      return;
+    }
+
+    if (!Number.isFinite(numericCurrent)) {
+      setErrorMessage("Please enter a valid current amount.");
       setSaving(false);
       return;
     }
@@ -266,7 +275,7 @@ export default function GoalsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+          "You've reached your Free plan limit. Free users can create up to 3 goals."
         );
       } else {
         setErrorMessage(error.message);
@@ -323,7 +332,10 @@ export default function GoalsPage() {
     const numericSavings =
       currency === "IDR" ? displaySavings : displaySavings / rate;
 
-    if (!numericSavings || numericSavings <= 0) {
+    if (
+      !Number.isFinite(numericSavings) ||
+      numericSavings <= 0
+    ) {
       setErrorMessage("Savings amount must be greater than zero.");
       setAddingSavings(null);
       setRemovingSavings(null);

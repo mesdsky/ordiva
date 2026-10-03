@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
@@ -53,6 +53,10 @@ export default function TransactionsPage() {
   const [message, setMessage] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const editOriginalAmount = useRef<{
+    display: string;
+    amount: number;
+  } | null>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const [type, setType] =
@@ -144,6 +148,14 @@ export default function TransactionsPage() {
     }
   }, [type, editingId]);
 
+  // While editing, switching type can leave a category of the other
+  // type selected; treat it as unselected so it is never saved.
+  const selectedCategoryId = filteredCategories.some(
+    (category) => category.id === categoryId
+  )
+    ? categoryId
+    : "";
+
   function markFormDirty() {
     setDirty(true);
   }
@@ -185,7 +197,20 @@ export default function TransactionsPage() {
         ? Number(transaction.amount)
         : Number(transaction.amount) * rate;
 
-    setAmount(String(displayAmount));
+    // Round so float drift (e.g. 3.0650000000000004) never shows up,
+    // and remember the original so an untouched amount is saved as-is.
+    const roundedDisplay = String(
+      currency === "IDR"
+        ? displayAmount
+        : Math.round(displayAmount * 100) / 100
+    );
+
+    editOriginalAmount.current = {
+      display: roundedDisplay,
+      amount: Number(transaction.amount),
+    };
+
+    setAmount(roundedDisplay);
 
     setDescription(transaction.description);
     setTransactionDate(transaction.transaction_date);
@@ -249,14 +274,17 @@ export default function TransactionsPage() {
       return;
     }
 
-    if (!categoryId) {
+    if (!selectedCategoryId) {
       setMessage("Please select a category.");
       setSaving(false);
       return;
     }
 
     const numericAmount =
-      currency === "IDR"
+      editingId &&
+      editOriginalAmount.current?.display === amount
+        ? editOriginalAmount.current.amount
+        : currency === "IDR"
         ? displayAmount
         : displayAmount / rate;
 
@@ -270,7 +298,7 @@ export default function TransactionsPage() {
     }
 
     const transactionData = {
-      category_id: categoryId,
+      category_id: selectedCategoryId,
       type,
       amount: numericAmount,
       description,
@@ -558,7 +586,7 @@ export default function TransactionsPage() {
 
                   <select
                     id="category"
-                    value={categoryId}
+                    value={selectedCategoryId}
                     onChange={(e) => {
                       setCategoryId(e.target.value);
                       markFormDirty();

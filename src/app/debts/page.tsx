@@ -56,6 +56,7 @@ export default function DebtsPage() {
   const {
     currency,
     rate,
+    convert,
     format: formatCurrency,
     loading: currencyLoading,
   } = useCurrency();
@@ -256,7 +257,7 @@ export default function DebtsPage() {
     if (hasReachedDebtLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -282,7 +283,7 @@ export default function DebtsPage() {
 
     if (hasReachedDebtLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -367,7 +368,7 @@ export default function DebtsPage() {
         )
       ) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+          "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
         );
       } else {
         setErrorMessage(error.message);
@@ -408,7 +409,25 @@ export default function DebtsPage() {
       return;
     }
 
-    if (payment > debt.remaining_amount) {
+    if (
+      currency !== "IDR" &&
+      (!Number.isFinite(rate) || rate <= 0)
+    ) {
+      setErrorMessage(
+        "Exchange rate is unavailable. Please try again."
+      );
+      return;
+    }
+
+    // The input is in the display currency; balances are stored in IDR.
+    const paymentIdr =
+      currency === "IDR" ? payment : payment / rate;
+
+    // Allow a little slack so paying the exact displayed (rounded)
+    // balance in a foreign currency settles the debt.
+    const tolerance = currency === "IDR" ? 0 : 0.01 / rate;
+
+    if (paymentIdr > debt.remaining_amount + tolerance) {
       setErrorMessage(
         "Payment cannot be greater than the remaining amount."
       );
@@ -419,10 +438,10 @@ export default function DebtsPage() {
     setMessage("");
     setErrorMessage("");
 
-    const newRemaining = Math.max(
-      0,
-      debt.remaining_amount - payment
-    );
+    const remainingAfter =
+      debt.remaining_amount - paymentIdr;
+    const newRemaining =
+      remainingAfter <= tolerance ? 0 : remainingAfter;
 
     const newStatus =
       newRemaining === 0 ? "settled" : "active";
@@ -837,7 +856,7 @@ export default function DebtsPage() {
               <input
                 type="number"
                 min="0.01"
-                max={debt.remaining_amount}
+                max={convert(debt.remaining_amount)}
                 step="0.01"
                 value={paymentValue}
                 onChange={(event) => {

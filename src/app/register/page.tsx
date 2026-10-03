@@ -17,14 +17,23 @@ export default function RegisterPage() {
     setLoading(true);
     setMessage("");
 
+    const trimmedName = fullName.trim();
+
+    if (!trimmedName) {
+      setMessage("Please enter your full name.");
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      // Pasted emails often carry a trailing space, which Supabase rejects.
+      email: email.trim(),
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: trimmedName,
         },
       },
     });
