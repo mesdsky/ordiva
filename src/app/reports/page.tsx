@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Leaf } from "@/components/landing/icons";
 import { useRouter } from "next/navigation";
 import {
@@ -79,7 +79,14 @@ export default function ReportsPage() {
 
   const isPremium = checkPremium(plan);
 
+  // Month switches can overlap; only the latest request may set state,
+  // or a slow earlier one would show last month's numbers.
+  const latestRequest = useRef(0);
+
   async function loadReportData(month: string) {
+    const requestId = ++latestRequest.current;
+    const isStale = () => requestId !== latestRequest.current;
+
     setLoading(true);
     setErrorMessage("");
 
@@ -102,6 +109,8 @@ export default function ReportsPage() {
       .select("plan")
       .eq("id", user.id)
       .single();
+
+    if (isStale()) return;
 
     if (profileError) {
       setErrorMessage(profileError.message);
@@ -133,20 +142,45 @@ export default function ReportsPage() {
     // ---------------------------------------------
     // LOAD TRANSACTIONS
     // ---------------------------------------------
-    const {
-      data: transactionData,
-      error: transactionError,
-    } = await supabase
-      .from("transactions")
-      .select(
-        "id, type, amount, description, transaction_date, category_id"
-      )
-      .eq("user_id", user.id)
-      .gte("transaction_date", transactionStartDate)
-      .lt("transaction_date", nextMonthStart)
-      .order("transaction_date", {
-        ascending: true,
-      });
+    // The API returns at most 1,000 rows per request; a year of history
+    // can exceed that, so page through it.
+    const transactionData: {
+      id: unknown;
+      type: unknown;
+      amount: unknown;
+      description: unknown;
+      transaction_date: unknown;
+      category_id: unknown;
+    }[] = [];
+    let transactionError: { message: string } | null = null;
+    const pageSize = 1000;
+
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(
+          "id, type, amount, description, transaction_date, category_id"
+        )
+        .eq("user_id", user.id)
+        .gte("transaction_date", transactionStartDate)
+        .lt("transaction_date", nextMonthStart)
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("id", { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        transactionError = error;
+        break;
+      }
+
+      transactionData.push(...(data ?? []));
+
+      if (!data || data.length < pageSize) break;
+    }
+
+    if (isStale()) return;
 
     if (transactionError) {
       setErrorMessage(transactionError.message);
@@ -165,6 +199,8 @@ export default function ReportsPage() {
       .select("id, name, type")
       .eq("user_id", user.id);
 
+    if (isStale()) return;
+
     if (categoryError) {
       setErrorMessage(categoryError.message);
       setLoading(false);
@@ -172,7 +208,7 @@ export default function ReportsPage() {
     }
 
     const loadedTransactions: Transaction[] = (
-      transactionData ?? []
+      transactionData
     ).map((transaction) => ({
       id: String(transaction.id),
       type:
@@ -741,11 +777,12 @@ export default function ReportsPage() {
                       id="report-month"
                       type="month"
                       value={selectedMonth}
-                      onChange={(event) =>
-                        setSelectedMonth(
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => {
+                        // Clearing the picker yields "", which is not a month.
+                        if (event.target.value) {
+                          setSelectedMonth(event.target.value);
+                        }
+                      }}
                       className="box-border mt-3 block w-full min-w-0 max-w-full appearance-none overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
                     />
 

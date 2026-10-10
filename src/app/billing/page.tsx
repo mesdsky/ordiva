@@ -46,18 +46,24 @@ export default function BillingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
 
-      const [{ data: profile, error: profileError }, billingResponse] = await Promise.all([
-        supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
-        fetch("/api/billing/me", { cache: "no-store" }),
-      ]);
+      try {
+        const [{ data: profile, error: profileError }, billingResponse] = await Promise.all([
+          supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+          fetch("/api/billing/me", { cache: "no-store" }),
+        ]);
 
-      if (profileError) setError("Unable to load your billing status.");
-      setPlan(profile?.plan === "premium" ? "premium" : "free");
+        if (profileError) setError("Unable to load your billing status.");
+        setPlan(profile?.plan === "premium" ? "premium" : "free");
 
-      const body = await billingResponse.json().catch(() => null);
-      if (!billingResponse.ok) setError(body?.error || "Unable to load billing details.");
-      else setBilling(body);
-      setLoading(false);
+        const body = await billingResponse.json().catch(() => null);
+        if (!billingResponse.ok) setError(body?.error || "Unable to load billing details.");
+        else setBilling(body);
+      } catch {
+        // A network failure would otherwise leave the page on the loader.
+        setError("Unable to load billing details. Check your connection and try again.");
+      } finally {
+        setLoading(false);
+      }
     }
     loadBilling();
   }, [router]);

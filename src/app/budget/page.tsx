@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navigation from "@/components/Navigation";
@@ -121,7 +121,13 @@ export default function BudgetPage() {
     };
   }
 
+  // Month switches can overlap; only the latest request may set state,
+  // or a slow earlier one would show the previous month's budgets.
+  const latestRequest = useRef(0);
+
   async function loadBudgetData() {
+    const requestId = ++latestRequest.current;
+
     setLoading(true);
     setErrorMessage("");
 
@@ -180,6 +186,8 @@ export default function BudgetPage() {
         .gte("transaction_date", startDate)
         .lt("transaction_date", endDate),
     ]);
+
+    if (requestId !== latestRequest.current) return;
 
     if (profileResult.error) {
       setErrorMessage(profileResult.error.message);
@@ -637,6 +645,8 @@ export default function BudgetPage() {
               type="month"
               value={selectedMonth}
               onChange={(event) => {
+                // Clearing the picker yields "", which is not a month.
+                if (!event.target.value) return;
                 setSelectedMonth(event.target.value);
                 setDirty(false);
                 setMessage("");
@@ -889,6 +899,8 @@ export default function BudgetPage() {
                       type="submit"
                       disabled={
                         saving ||
+                        // Until the user's currency loads, amounts would be read as IDR.
+                        currencyLoading ||
                         !categoryId ||
                         availableCategories.length ===
                           0 ||
@@ -1186,7 +1198,7 @@ export default function BudgetPage() {
         description={
           budgetToDelete
             ? budgetToDelete.is_recurring
-              ? `"${budgetToDelete.name}" will stop applying to future months. This action cannot be undone.`
+              ? `"${budgetToDelete.name}" will be removed from every month it applies to, including past months. This action cannot be undone.`
               : `You are about to delete "${budgetToDelete.name}". This action cannot be undone.`
             : "This budget will be permanently deleted."
         }

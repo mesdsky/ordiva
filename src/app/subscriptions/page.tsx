@@ -1108,6 +1108,8 @@ export default function SubscriptionsPage() {
                     type="submit"
                     disabled={
                       saving ||
+                      // Until the user's currency loads, amounts would be read as IDR.
+                      currencyLoading ||
                       (currency !== "IDR" &&
                         (!Number.isFinite(rate) || rate <= 0))
                     }

@@ -209,9 +209,18 @@ export default function ProfilePage() {
     }
 
     const trimmedName = fullName.trim();
+    const trimmedGoal = financialGoal.trim();
 
     if (!trimmedName) {
       setError("Please enter your full name.");
+      setSaving(false);
+      return;
+    }
+
+    // A blank goal marks onboarding as unfinished, which would lock the
+    // user out of every page behind a redirect to /onboarding.
+    if (!trimmedGoal) {
+      setError("Please enter your financial goal.");
       setSaving(false);
       return;
     }
@@ -223,8 +232,7 @@ export default function ProfilePage() {
           full_name: trimmedName,
           currency,
           account_type: accountType,
-          financial_goal:
-            financialGoal.trim() || null,
+          financial_goal: trimmedGoal,
         })
         .eq("id", user.id);
 
@@ -237,6 +245,7 @@ export default function ProfilePage() {
     }
 
     setFullName(trimmedName);
+    setFinancialGoal(trimmedGoal);
     setMessage("Profile updated successfully.");
     setDirty(false);
     setSaving(false);

@@ -3,7 +3,9 @@
 import {
   createContext,
   useContext,
+  useCallback,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -25,9 +27,16 @@ export function UnsavedChangesProvider({
 }) {
   const [isDirty, setIsDirty] = useState(false);
 
-  const setDirty = (dirty: boolean) => {
+  // Stable identity: pages list setDirty in effect deps, and a new
+  // function per render would re-run their data loads on every edit.
+  const setDirty = useCallback((dirty: boolean) => {
     setIsDirty(dirty);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ isDirty, setDirty }),
+    [isDirty, setDirty]
+  );
 
   useEffect(() => {
     const handleBeforeUnload = (
@@ -56,10 +65,7 @@ export function UnsavedChangesProvider({
 
   return (
     <UnsavedChangesContext.Provider
-      value={{
-        isDirty,
-        setDirty,
-      }}
+      value={value}
     >
       {children}
     </UnsavedChangesContext.Provider>
