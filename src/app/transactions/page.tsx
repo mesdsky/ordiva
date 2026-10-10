@@ -34,6 +34,40 @@ type Category = {
   color?: string | null;
 };
 
+// The API returns at most 1,000 rows per request, so page through the
+// full history; otherwise older transactions silently drop off the list.
+const TRANSACTION_PAGE_SIZE = 1000;
+
+async function loadAllTransactions(
+  supabase: ReturnType<typeof createClient>
+) {
+  const rows: Transaction[] = [];
+
+  for (let from = 0; ; from += TRANSACTION_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(
+        "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
+      )
+      .order("transaction_date", {
+        ascending: false,
+      })
+      .order("created_at", {
+        ascending: false,
+      })
+      .order("id", { ascending: false })
+      .range(from, from + TRANSACTION_PAGE_SIZE - 1);
+
+    if (error) return { data: null, error };
+
+    rows.push(...((data ?? []) as Transaction[]));
+
+    if (!data || data.length < TRANSACTION_PAGE_SIZE) {
+      return { data: rows, error: null };
+    }
+  }
+}
+
 export default function TransactionsPage() {
   const router = useRouter();
   const { setDirty } = useUnsavedChanges();
@@ -98,17 +132,7 @@ export default function TransactionsPage() {
         transactionsResult,
         categoriesResult,
       ] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select(
-            "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
-          )
-          .order("transaction_date", {
-            ascending: false,
-          })
-          .order("created_at", {
-            ascending: false,
-          }),
+        loadAllTransactions(supabase),
 
         supabase
           .from("categories")
