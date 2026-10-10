@@ -460,6 +460,18 @@ export default function DashboardPage() {
       const nextMonthStart =
         `${nextMonthYear}-${nextMonth}-01`;
 
+      // The trend chart covers the last 6 months; nothing older is
+      // needed, and loading full history hits the 1,000-row API cap.
+      const chartStartDate = new Date(
+        currentYear,
+        today.getMonth() - 5,
+        1
+      );
+
+      const chartStart = `${chartStartDate.getFullYear()}-${String(
+        chartStartDate.getMonth() + 1
+      ).padStart(2, "0")}-01`;
+
       const [
         profileResult,
         transactionsResult,
@@ -482,7 +494,12 @@ export default function DashboardPage() {
           .select(
             "id, type, amount, category_id, transaction_date"
           )
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .gte("transaction_date", chartStart)
+          .lt("transaction_date", nextMonthStart)
+          .order("transaction_date", {
+            ascending: false,
+          }),
 
         supabase
           .from("transactions")
@@ -505,9 +522,9 @@ export default function DashboardPage() {
 
         supabase
           .from("budgets")
-          .select("id, category_id, amount")
+          .select("id, category_id, amount, month, is_recurring")
           .eq("user_id", user.id)
-          .eq("month", currentMonthStart),
+          .lte("month", currentMonthStart),
 
         supabase
           .from("transactions")
@@ -686,13 +703,48 @@ export default function DashboardPage() {
         !budgetsResult.error &&
         !monthlyTransactionsResult.error
       ) {
-        const budgets: Budget[] = (
-          budgetsResult.data ?? []
-        ).map((budget) => ({
-          id: String(budget.id),
-          category_id: String(budget.category_id),
-          amount: Number(budget.amount),
-        }));
+        // Same rule as the budget page: a budget set for this month
+        // wins, otherwise the latest recurring budget carries over.
+        const currentMonthKey = currentMonthStart.slice(0, 7);
+        const budgetByCategory = new Map<
+          string,
+          { budget: Budget; month: string }
+        >();
+
+        for (const row of budgetsResult.data ?? []) {
+          const month = String(row.month).slice(0, 7);
+
+          if (month !== currentMonthKey && !row.is_recurring) {
+            continue;
+          }
+
+          const categoryId = String(row.category_id);
+          const existing = budgetByCategory.get(categoryId);
+          const isCurrent = month === currentMonthKey;
+          const existingIsCurrent =
+            existing?.month === currentMonthKey;
+
+          if (
+            !existing ||
+            (isCurrent && !existingIsCurrent) ||
+            (isCurrent === existingIsCurrent &&
+              month > existing.month)
+          ) {
+            budgetByCategory.set(categoryId, {
+              month,
+              budget: {
+                id: String(row.id),
+                category_id: categoryId,
+                amount: Number(row.amount),
+              },
+            });
+          }
+        }
+
+        const budgets: Budget[] = Array.from(
+          budgetByCategory.values(),
+          (entry) => entry.budget
+        );
 
         const monthlyTransactions =
           monthlyTransactionsResult.data ?? [];
