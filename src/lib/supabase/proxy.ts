@@ -35,9 +35,11 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifies the JWT locally when the project uses asymmetric
+  // signing keys (falls back to the Auth server otherwise), so most
+  // navigations skip a network round trip. It also refreshes the session.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub ?? null;
 
   const pathname = request.nextUrl.pathname;
 
@@ -77,7 +79,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  if (!user) {
+  if (!userId) {
 
     const url = request.nextUrl.clone();
 
@@ -93,7 +95,7 @@ export async function updateSession(request: NextRequest) {
       .select(
         "full_name, account_type, currency, financial_goal, plan"
       )
-      .eq("id", user.id)
+      .eq("id", userId)
       .maybeSingle();
 
 
@@ -148,7 +150,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (profile.plan === "premium") {
-    await expireLapsedPremium(supabase, user.id);
+    await expireLapsedPremium(supabase, userId);
   }
 
   return supabaseResponse;
