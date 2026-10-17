@@ -38,6 +38,15 @@ type Category = {
 // full history; otherwise older transactions silently drop off the list.
 const TRANSACTION_PAGE_SIZE = 1000;
 
+// Keep the list in query order after a local insert or date edit, so a
+// backdated entry lands in its date group instead of above "Today".
+// The sort is stable, so a new row stays first within its date.
+function byDateDesc(list: Transaction[]) {
+  return [...list].sort((a, b) =>
+    b.transaction_date.localeCompare(a.transaction_date)
+  );
+}
+
 async function loadAllTransactions(
   supabase: ReturnType<typeof createClient>
 ) {
@@ -351,10 +360,12 @@ export default function TransactionsPage() {
 
       if (data) {
         setTransactions((current) =>
-          current.map((transaction) =>
-            transaction.id === editingId
-              ? data
-              : transaction
+          byDateDesc(
+            current.map((transaction) =>
+              transaction.id === editingId
+                ? data
+                : transaction
+            )
           )
         );
       }
@@ -387,10 +398,9 @@ export default function TransactionsPage() {
     }
 
     if (data) {
-      setTransactions((current) => [
-        data,
-        ...current,
-      ]);
+      setTransactions((current) =>
+        byDateDesc([data, ...current])
+      );
     }
 
     resetForm();

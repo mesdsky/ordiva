@@ -39,10 +39,7 @@ export function useCurrency() {
           ? data.currency
           : "IDR";
 
-      setCurrency(selectedCurrency);
-
       if (selectedCurrency === "IDR") {
-        setRate(1);
         setLoading(false);
         return;
       }
@@ -58,14 +55,15 @@ export function useCurrency() {
           throw new Error("Failed to load currency rate");
         }
 
+        // Switch currency and rate together: a foreign currency with the
+        // initial rate of 1 would save $1,000 as Rp 1,000.
+        setCurrency(selectedCurrency);
         setRate(loadedRate);
       } catch (error) {
         // Never fall back to rate 1 in a foreign currency: Rp 50,000
         // would show as $50,000 and a $50 entry would save as Rp 50.
         // Showing IDR is always correct.
         console.error("Failed to load currency rate:", error);
-        setCurrency("IDR");
-        setRate(1);
       }
 
       setLoading(false);

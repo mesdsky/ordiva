@@ -347,6 +347,16 @@ export default function GoalsPage() {
     if (isAdding) {
       newCurrentAmount = goal.current_amount + numericSavings;
 
+      // Whole cents in a foreign currency rarely land exactly on the
+      // IDR target; treat a sub-cent overshoot as reaching it.
+      const tolerance = currency === "IDR" ? 0 : 0.01 / rate;
+      if (
+        newCurrentAmount > goal.target_amount &&
+        newCurrentAmount - goal.target_amount <= tolerance
+      ) {
+        newCurrentAmount = goal.target_amount;
+      }
+
       if (newCurrentAmount > goal.target_amount) {
         setErrorMessage(
           `Savings would exceed the target by ${formatCurrency(
@@ -617,7 +627,7 @@ export default function GoalsPage() {
                     id="goal-target"
                     type="number"
                     min="1"
-                    step="1"
+                    step="0.01"
                     value={targetAmount}
                     onChange={(event) => {
                       setTargetAmount(event.target.value);
@@ -641,7 +651,7 @@ export default function GoalsPage() {
                     id="goal-current"
                     type="number"
                     min="0"
-                    step="1"
+                    step="0.01"
                     value={currentAmount}
                     onChange={(event) => {
                       setCurrentAmount(event.target.value);
@@ -704,6 +714,7 @@ export default function GoalsPage() {
                     type="submit"
                     disabled={
                       saving ||
+                      currencyLoading ||
                       (currency !== "IDR" &&
                         (!Number.isFinite(rate) || rate <= 0))
                     }
@@ -930,7 +941,7 @@ export default function GoalsPage() {
                               id={`savings-${goal.id}`}
                               type="number"
                               min="1"
-                              step="1"
+                              step="0.01"
                               value={savingsAmount}
                               onChange={(event) => {
                                 setSavingsAmount(event.target.value);

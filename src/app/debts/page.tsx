@@ -1283,6 +1283,7 @@ export default function DebtsPage() {
                       type="submit"
                       disabled={
                         saving ||
+                        currencyLoading ||
                         (currency !== "IDR" &&
                           (!Number.isFinite(rate) ||
                             rate <= 0))

@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 type UnsavedChangesContextType = {
   isDirty: boolean;
@@ -26,6 +27,15 @@ export function UnsavedChangesProvider({
   children: ReactNode;
 }) {
   const [isDirty, setIsDirty] = useState(false);
+  const pathname = usePathname();
+  const [dirtyPath, setDirtyPath] = useState(pathname);
+
+  // A form left via Back or router.push never clears its flag, which
+  // made every later page warn about unsaved changes.
+  if (dirtyPath !== pathname) {
+    setDirtyPath(pathname);
+    setIsDirty(false);
+  }
 
   // Stable identity: pages list setDirty in effect deps, and a new
   // function per render would re-run their data loads on every edit.

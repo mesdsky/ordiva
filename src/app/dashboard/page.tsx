@@ -157,9 +157,11 @@ export default function DashboardPage() {
   const [visible, setVisible] = useState(false);
   const [plan, setPlan] = useState<"free" | "premium">("free");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const {
     format: formatCurrency,
+    convert,
     loading: currencyLoading,
   } = useCurrency();
 
@@ -489,17 +491,12 @@ export default function DashboardPage() {
           .eq("id", user.id)
           .single(),
 
-        supabase
-          .from("transactions")
-          .select(
-            "id, type, amount, category_id, transaction_date"
-          )
-          .eq("user_id", user.id)
-          .gte("transaction_date", chartStart)
-          .lt("transaction_date", nextMonthStart)
-          .order("transaction_date", {
-            ascending: false,
-          }),
+        loadChartTransactions(
+          supabase,
+          user.id,
+          chartStart,
+          nextMonthStart
+        ),
 
         supabase
           .from("transactions")
@@ -569,6 +566,21 @@ export default function DashboardPage() {
             nullsFirst: false,
           }),
       ]);
+
+      // Failed sections otherwise render as Rp 0 with no hint why.
+      setLoadFailed(
+        [
+          profileResult,
+          transactionsResult,
+          recentTransactionsResult,
+          categoriesResult,
+          budgetsResult,
+          monthlyTransactionsResult,
+          goalsResult,
+          subscriptionsResult,
+          debtsResult,
+        ].some((result) => result.error)
+      );
 
       if (profileResult.data?.full_name) {
         setName(profileResult.data.full_name);
@@ -1253,6 +1265,24 @@ export default function DashboardPage() {
     <main className="min-h-screen overflow-x-hidden bg-[#F5F2E8] text-[#173C34]">
       <Navigation />
 
+      {loadFailed && (
+        <div
+          role="alert"
+          className="mx-4 mt-4 flex max-w-7xl xl:mx-auto flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800"
+        >
+          <span>
+            Some of your data couldn&apos;t be loaded, so figures below may be incomplete.
+          </span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-red-700 px-4 py-1.5 font-semibold text-white transition hover:bg-red-800"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* =====================================================
           HERO
       ===================================================== */}
@@ -1470,6 +1500,7 @@ export default function DashboardPage() {
                 <DashboardCashFlowChart
                   data={monthlyData}
                   formatCurrency={formatCurrency}
+                  convert={convert}
                 />
               </div>
             </GlassPanel>
@@ -2640,6 +2671,44 @@ export default function DashboardPage() {
    UI COMPONENTS
 ========================================================= */
 
+// The API returns at most 1,000 rows per request; page through the
+// six-month window so heavy users' oldest chart months aren't cut off.
+const CHART_PAGE_SIZE = 1000;
+
+async function loadChartTransactions(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  start: string,
+  end: string
+) {
+  const rows: {
+    id: string;
+    type: string;
+    amount: number;
+    category_id: string | null;
+    transaction_date: string;
+  }[] = [];
+
+  for (let from = 0; ; from += CHART_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("id, type, amount, category_id, transaction_date")
+      .eq("user_id", userId)
+      .gte("transaction_date", start)
+      .lt("transaction_date", end)
+      .order("transaction_date", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + CHART_PAGE_SIZE - 1);
+
+    if (error) return { data: null, error };
+
+    rows.push(...(data ?? []));
+    if (!data || data.length < CHART_PAGE_SIZE) {
+      return { data: rows, error: null };
+    }
+  }
+}
+
 type ArrowDirection = "up-right" | "down-right" | "right" | "up" | "down";
 
 function ArrowIcon({
@@ -2695,9 +2764,11 @@ function DashboardGlyph({
 const DashboardCashFlowChart = memo(function DashboardCashFlowChart({
   data,
   formatCurrency,
+  convert,
 }: {
   data: MonthlyData[];
   formatCurrency: (amount: number) => string;
+  convert: (amount: number) => number;
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%" debounce={120}>
@@ -2733,13 +2804,15 @@ const DashboardCashFlowChart = memo(function DashboardCashFlowChart({
           }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={(value) =>
-            value >= 1000000
+          // Values are IDR; show them in the display currency like the tooltip.
+          tickFormatter={(raw: number) => {
+            const value = convert(raw);
+            return value >= 1000000
               ? `${(value / 1000000).toFixed(1)}M`
               : value >= 1000
               ? `${(value / 1000).toFixed(0)}K`
-              : `${value}`
-          }
+              : `${Math.round(value)}`;
+          }}
         />
 
         <Tooltip
