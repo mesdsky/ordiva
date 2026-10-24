@@ -460,6 +460,17 @@ export default function DashboardPage() {
       const nextMonthStart =
         `${nextMonthYear}-${nextMonth}-01`;
 
+      // The 6-month chart is the widest window the dashboard shows.
+      const chartStartDate = new Date(
+        currentYear,
+        today.getMonth() - 5,
+        1
+      );
+
+      const chartStart = `${chartStartDate.getFullYear()}-${String(
+        chartStartDate.getMonth() + 1
+      ).padStart(2, "0")}-01`;
+
       const [
         profileResult,
         transactionsResult,
@@ -482,7 +493,9 @@ export default function DashboardPage() {
           .select(
             "id, type, amount, category_id, transaction_date"
           )
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .gte("transaction_date", chartStart)
+          .lt("transaction_date", nextMonthStart),
 
         supabase
           .from("transactions")
@@ -505,9 +518,9 @@ export default function DashboardPage() {
 
         supabase
           .from("budgets")
-          .select("id, category_id, amount")
+          .select("id, category_id, amount, month, is_recurring")
           .eq("user_id", user.id)
-          .eq("month", currentMonthStart),
+          .lte("month", currentMonthStart),
 
         supabase
           .from("transactions")
@@ -686,13 +699,46 @@ export default function DashboardPage() {
         !budgetsResult.error &&
         !monthlyTransactionsResult.error
       ) {
-        const budgets: Budget[] = (
-          budgetsResult.data ?? []
-        ).map((budget) => ({
-          id: String(budget.id),
-          category_id: String(budget.category_id),
-          amount: Number(budget.amount),
-        }));
+        // Match the Budget page: a category's budget is this month's row,
+        // else its most recent recurring row from an earlier month.
+        const currentMonthKey = currentMonthStart.slice(0, 7);
+        const budgetByCategory = new Map<
+          string,
+          { budget: Budget; month: string }
+        >();
+
+        for (const row of budgetsResult.data ?? []) {
+          const month = String(row.month).slice(0, 7);
+
+          if (month !== currentMonthKey && !row.is_recurring) {
+            continue;
+          }
+
+          const categoryId = String(row.category_id);
+          const existing = budgetByCategory.get(categoryId);
+          const isCurrent = month === currentMonthKey;
+          const existingIsCurrent = existing?.month === currentMonthKey;
+
+          if (
+            !existing ||
+            (isCurrent && !existingIsCurrent) ||
+            (isCurrent === existingIsCurrent && month > existing.month)
+          ) {
+            budgetByCategory.set(categoryId, {
+              month,
+              budget: {
+                id: String(row.id),
+                category_id: categoryId,
+                amount: Number(row.amount),
+              },
+            });
+          }
+        }
+
+        const budgets: Budget[] = Array.from(
+          budgetByCategory.values(),
+          (entry) => entry.budget
+        );
 
         const monthlyTransactions =
           monthlyTransactionsResult.data ?? [];
@@ -1283,7 +1329,7 @@ export default function DashboardPage() {
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/55">
-                        Total balance
+                        Net this month
                       </p>
 
                       <p className="mt-3 break-words text-2xl font-bold tracking-tight text-white sm:text-3xl">

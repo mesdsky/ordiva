@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Leaf } from "@/components/landing/icons";
 import { useRouter } from "next/navigation";
 import {
@@ -67,6 +67,7 @@ export default function ReportsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [plan, setPlan] = useState<Plan>("free");
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const latestMonthRef = useRef(selectedMonth);
   const [errorMessage, setErrorMessage] = useState("");
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -80,6 +81,7 @@ export default function ReportsPage() {
   const isPremium = checkPremium(plan);
 
   async function loadReportData(month: string) {
+    latestMonthRef.current = month;
     setLoading(true);
     setErrorMessage("");
 
@@ -133,20 +135,43 @@ export default function ReportsPage() {
     // ---------------------------------------------
     // LOAD TRANSACTIONS
     // ---------------------------------------------
-    const {
-      data: transactionData,
-      error: transactionError,
-    } = await supabase
-      .from("transactions")
-      .select(
-        "id, type, amount, description, transaction_date, category_id"
-      )
-      .eq("user_id", user.id)
-      .gte("transaction_date", transactionStartDate)
-      .lt("transaction_date", nextMonthStart)
-      .order("transaction_date", {
-        ascending: true,
-      });
+    // Supabase caps each response at 1000 rows, so page through the
+    // range or a 12-month premium window silently drops recent data.
+    const PAGE_SIZE = 1000;
+    const transactionData: {
+      id: unknown;
+      type: unknown;
+      amount: unknown;
+      description: unknown;
+      transaction_date: unknown;
+      category_id: unknown;
+    }[] = [];
+    let transactionError: { message: string } | null = null;
+
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(
+          "id, type, amount, description, transaction_date, category_id"
+        )
+        .eq("user_id", user.id)
+        .gte("transaction_date", transactionStartDate)
+        .lt("transaction_date", nextMonthStart)
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("id", { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        transactionError = error;
+        break;
+      }
+
+      transactionData.push(...(data ?? []));
+
+      if (!data || data.length < PAGE_SIZE) break;
+    }
 
     if (transactionError) {
       setErrorMessage(transactionError.message);
@@ -201,6 +226,9 @@ export default function ReportsPage() {
           ? "income"
           : "expense",
     }));
+
+    // A newer month was picked while this one loaded; drop the stale result.
+    if (latestMonthRef.current !== month) return;
 
     setCategories(loadedCategories);
 
@@ -741,11 +769,13 @@ export default function ReportsPage() {
                       id="report-month"
                       type="month"
                       value={selectedMonth}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        // Cleared month inputs report "".
+                        if (!event.target.value) return;
                         setSelectedMonth(
                           event.target.value
-                        )
-                      }
+                        );
+                      }}
                       className="box-border mt-3 block w-full min-w-0 max-w-full appearance-none overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
                     />
 

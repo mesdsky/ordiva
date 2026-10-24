@@ -256,7 +256,7 @@ export default function DebtsPage() {
     if (hasReachedDebtLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -282,7 +282,7 @@ export default function DebtsPage() {
 
     if (hasReachedDebtLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -367,7 +367,7 @@ export default function DebtsPage() {
         )
       ) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+          "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
         );
       } else {
         setErrorMessage(error.message);

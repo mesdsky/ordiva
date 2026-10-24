@@ -99,6 +99,7 @@ export default function TransactionsPage() {
           .select(
             "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
           )
+          .eq("user_id", user.id)
           .order("transaction_date", {
             ascending: false,
           })
@@ -109,6 +110,7 @@ export default function TransactionsPage() {
         supabase
           .from("categories")
           .select("id, name, type, icon, color")
+          .eq("user_id", user.id)
           .order("name", {
             ascending: true,
           }),
@@ -299,10 +301,12 @@ export default function TransactionsPage() {
 
       if (data) {
         setTransactions((current) =>
-          current.map((transaction) =>
-            transaction.id === editingId
-              ? data
-              : transaction
+          sortNewestFirst(
+            current.map((transaction) =>
+              transaction.id === editingId
+                ? data
+                : transaction
+            )
           )
         );
       }
@@ -335,10 +339,9 @@ export default function TransactionsPage() {
     }
 
     if (data) {
-      setTransactions((current) => [
-        data,
-        ...current,
-      ]);
+      setTransactions((current) =>
+        sortNewestFirst([data, ...current])
+      );
     }
 
     resetForm();
@@ -915,6 +918,14 @@ export default function TransactionsPage() {
         onCancel={closeDeleteModal}
       />
     </>
+  );
+}
+
+// The day-grouped list expects newest dates first. Array sort is stable,
+// so a just-saved row stays ahead of older rows from the same day.
+function sortNewestFirst(transactions: Transaction[]) {
+  return [...transactions].sort((a, b) =>
+    b.transaction_date.localeCompare(a.transaction_date)
   );
 }
 
