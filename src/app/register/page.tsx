@@ -30,7 +30,15 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      // Don't confirm whether an email already has an account.
+      setMessage(
+        error.code === "weak_password"
+          ? "That password is too weak. Try a longer one."
+          : error.code === "over_email_send_rate_limit" ||
+            error.code === "over_request_rate_limit"
+          ? "Too many attempts. Please wait a moment and try again."
+          : "Unable to create your account. If you already have one, sign in or reset your password."
+      );
       setLoading(false);
       return;
     }

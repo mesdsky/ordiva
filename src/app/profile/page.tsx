@@ -216,6 +216,13 @@ export default function ProfilePage() {
       return;
     }
 
+    // An empty goal marks onboarding as incomplete in the proxy.
+    if (!financialGoal.trim()) {
+      setError("Please enter your financial goal.");
+      setSaving(false);
+      return;
+    }
+
     const { error: updateError } =
       await supabase
         .from("profiles")
@@ -224,7 +231,7 @@ export default function ProfilePage() {
           currency,
           account_type: accountType,
           financial_goal:
-            financialGoal.trim() || null,
+            financialGoal.trim(),
         })
         .eq("id", user.id);
 

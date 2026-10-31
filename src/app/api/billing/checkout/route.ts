@@ -31,7 +31,20 @@ type PlanId = keyof typeof PLANS;
 const PREMIUM_BILLING_ENABLED = process.env.PREMIUM_BILLING_ENABLED === "true";
 
 function isPlanId(value: unknown): value is PlanId {
-  return typeof value === "string" && value in PLANS;
+  return typeof value === "string" && Object.hasOwn(PLANS, value);
+}
+
+const REUSE_WINDOW_MS = 20 * 60 * 1000;
+
+function sessionStillOpen(metadata: unknown) {
+  const session =
+    metadata && typeof metadata === "object"
+      ? (metadata as { xendit_session?: { expires_at?: unknown } }).xendit_session
+      : undefined;
+  const expiresAt = session?.expires_at;
+  if (typeof expiresAt !== "string") return true;
+  // Leave a few minutes so the customer can finish paying.
+  return new Date(expiresAt).getTime() - Date.now() > 5 * 60 * 1000;
 }
 
 function getGivenNames(user: {
@@ -76,6 +89,27 @@ export async function POST(request: Request) {
 
     const plan = PLANS[planId];
     const admin = createAdminClient();
+
+    // Reuse a recent unpaid checkout for the same plan so double clicks
+    // or repeated visits don't pile up orders and payment links.
+    const { data: recent } = await admin
+      .from("billing_orders")
+      .select("id, checkout_url, metadata, created_at")
+      .eq("user_id", user.id)
+      .eq("plan_id", planId)
+      .eq("status", "pending")
+      .not("checkout_url", "is", null)
+      .gt("created_at", new Date(Date.now() - REUSE_WINDOW_MS).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recent?.checkout_url && sessionStillOpen(recent.metadata)) {
+      return NextResponse.json({
+        checkoutUrl: recent.checkout_url,
+        orderId: recent.id,
+      });
+    }
 
     const { data: order, error: orderError } = await admin
       .from("billing_orders")

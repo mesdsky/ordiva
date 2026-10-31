@@ -31,7 +31,13 @@ export default function LoginPage() {
       });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(
+        error.code === "email_not_confirmed"
+          ? "Please confirm your email address first. Check your inbox for the link."
+          : error.code === "over_request_rate_limit"
+          ? "Too many attempts. Please wait a moment and try again."
+          : "Invalid email or password."
+      );
       setLoading(false);
       return;
     }

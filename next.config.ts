@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains",
           },
           {
+            // Script sources are left open (Next inlines bootstrap
+            // scripts); these directives block framing, <base> hijacking,
+            // plugins, and forms posting off-site.
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+          },
+          {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },

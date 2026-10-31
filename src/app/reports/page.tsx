@@ -741,11 +741,13 @@ export default function ReportsPage() {
                       id="report-month"
                       type="month"
                       value={selectedMonth}
-                      onChange={(event) =>
-                        setSelectedMonth(
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => {
+                        // Clearing the field gives "", which would
+                        // query an invalid date.
+                        if (/^\d{4}-\d{2}$/.test(event.target.value)) {
+                          setSelectedMonth(event.target.value);
+                        }
+                      }}
                       className="box-border mt-3 block w-full min-w-0 max-w-full appearance-none overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/40 focus:border-white/40 focus:bg-white/15"
                     />
 

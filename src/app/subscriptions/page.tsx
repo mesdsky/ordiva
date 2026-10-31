@@ -284,7 +284,7 @@ export default function SubscriptionsPage() {
     if (hasReachedSubscriptionLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -308,9 +308,12 @@ export default function SubscriptionsPage() {
   ) {
     event.preventDefault();
 
+    // Until the rate loads, amounts would be saved as IDR.
+    if (currencyLoading) return;
+
     if (hasReachedSubscriptionLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -394,7 +397,7 @@ export default function SubscriptionsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+          "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
         );
       } else {
         setErrorMessage(error.message);
@@ -1108,6 +1111,7 @@ export default function SubscriptionsPage() {
                     type="submit"
                     disabled={
                       saving ||
+                      currencyLoading ||
                       (currency !== "IDR" &&
                         (!Number.isFinite(rate) || rate <= 0))
                     }

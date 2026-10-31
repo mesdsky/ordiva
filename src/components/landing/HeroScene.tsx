@@ -156,7 +156,7 @@ export default function HeroScene() {
         camera.updateProjectionMatrix();
       };
       resize();
-      const resizeObserver = new ResizeObserver(resize);
+      let resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(canvas);
 
       const reducedMotion = window.matchMedia(
@@ -207,6 +207,13 @@ export default function HeroScene() {
       if (reducedMotion) {
         uniforms.uTime.value = 2;
         render();
+        // setSize clears the canvas and no loop runs to repaint it.
+        resizeObserver.disconnect();
+        resizeObserver = new ResizeObserver(() => {
+          resize();
+          render();
+        });
+        resizeObserver.observe(canvas);
       } else {
         window.addEventListener("pointermove", onPointerMove, { passive: true });
         window.addEventListener("scroll", onScroll, { passive: true });

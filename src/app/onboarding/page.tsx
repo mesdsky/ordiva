@@ -257,18 +257,30 @@ export default function OnboardingPage() {
       return;
     }
 
-    const { error } = await supabase
+    const fields = {
+      full_name: fullName.trim(),
+      account_type: accountType,
+      currency,
+      financial_goal: financialGoal,
+    };
+
+    const { data: updated, error: updateError } = await supabase
       .from("profiles")
-      .update({
-        full_name: fullName.trim(),
-        account_type: accountType,
-        currency,
-        financial_goal: financialGoal,
-      })
-      .eq("id", user.id);
+      .update(fields)
+      .eq("id", user.id)
+      .select("id");
+
+    // An update that matches no row succeeds silently. Create the row
+    // instead, or the proxy keeps sending the user back here.
+    const error =
+      updateError ??
+      (updated && updated.length === 0
+        ? (await supabase.from("profiles").insert({ id: user.id, ...fields }))
+            .error
+        : null);
 
     if (error) {
-      setMessage(error.message);
+      setMessage("We couldn't save your profile. Please try again.");
       setSaving(false);
       return;
     }

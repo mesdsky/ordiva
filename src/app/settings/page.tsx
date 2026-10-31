@@ -122,7 +122,15 @@ export default function SettingsPage() {
     });
 
     if (passwordError) {
-      setError(passwordError.message || "Unable to change your password.");
+      setError(
+        passwordError.code === "same_password"
+          ? "Choose a password different from your current one."
+          : passwordError.code === "weak_password"
+          ? "That password is too weak. Try a longer one."
+          : passwordError.code === "reauthentication_needed"
+          ? "Please sign in again before changing your password."
+          : "Unable to change your password."
+      );
       setChangingPassword(false);
       return;
     }

@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
+import { displayTolerance } from "@/lib/currency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 
 type DebtType = "debt" | "receivable";
@@ -256,7 +257,7 @@ export default function DebtsPage() {
     if (hasReachedDebtLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -280,9 +281,12 @@ export default function DebtsPage() {
   ) {
     event.preventDefault();
 
+    // Until the rate loads, amounts would be saved as IDR.
+    if (currencyLoading) return;
+
     if (hasReachedDebtLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+        "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
       );
       return;
     }
@@ -367,7 +371,7 @@ export default function DebtsPage() {
         )
       ) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active debts or receivables."
+          "You've reached your Free plan limit. Free users can have up to 5 active debts or receivables."
         );
       } else {
         setErrorMessage(error.message);
@@ -408,7 +412,22 @@ export default function DebtsPage() {
       return;
     }
 
-    if (payment > debt.remaining_amount) {
+    if (
+      currency !== "IDR" &&
+      (!Number.isFinite(rate) || rate <= 0)
+    ) {
+      setErrorMessage(
+        "Exchange rate is unavailable. Please try again."
+      );
+      return;
+    }
+
+    // Balances are stored in IDR; the input is in the display currency.
+    const paymentIdr =
+      currency === "IDR" ? payment : payment / rate;
+    const tolerance = displayTolerance(currency, rate);
+
+    if (paymentIdr > debt.remaining_amount + tolerance) {
       setErrorMessage(
         "Payment cannot be greater than the remaining amount."
       );
@@ -419,10 +438,11 @@ export default function DebtsPage() {
     setMessage("");
     setErrorMessage("");
 
-    const newRemaining = Math.max(
-      0,
-      debt.remaining_amount - payment
-    );
+    // Paying the amount shown on screen settles the debt, even if the
+    // converted value is a fraction of a rupiah off.
+    const leftover = debt.remaining_amount - paymentIdr;
+    const newRemaining =
+      leftover <= tolerance ? 0 : leftover;
 
     const newStatus =
       newRemaining === 0 ? "settled" : "active";
@@ -837,7 +857,6 @@ export default function DebtsPage() {
               <input
                 type="number"
                 min="0.01"
-                max={debt.remaining_amount}
                 step="0.01"
                 value={paymentValue}
                 onChange={(event) => {
@@ -1264,6 +1283,7 @@ export default function DebtsPage() {
                       type="submit"
                       disabled={
                         saving ||
+                        currencyLoading ||
                         (currency !== "IDR" &&
                           (!Number.isFinite(rate) ||
                             rate <= 0))

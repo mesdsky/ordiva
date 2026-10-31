@@ -26,17 +26,37 @@ export default function ResetPasswordPage() {
     useState("");
 
   useEffect(() => {
+    const invalidLink =
+      "This password reset link is invalid or has expired. Please request a new one.";
+
+    // Only a session created by the reset link may change the password.
+    // A plain signed-in session (or a failed link, which keeps the old
+    // session) must not reach the form.
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const linkFailed = query.has("error") || hash.has("error");
+    const fromResetLink =
+      query.has("code") || hash.get("type") === "recovery";
+    // Created after reading the URL: the client strips the code from it.
     const supabase = createClient();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" && !linkFailed) {
+        setErrorMessage("");
+        setReady(true);
+        setLoading(false);
+      }
+    });
 
     async function checkSession() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        setErrorMessage(
-          "This password reset link is invalid or has expired. Please request a new one."
-        );
+      if (!session || linkFailed || !fromResetLink) {
+        setErrorMessage(invalidLink);
         setLoading(false);
         return;
       }
@@ -46,6 +66,8 @@ export default function ResetPasswordPage() {
     }
 
     checkSession();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   async function handleSubmit(
@@ -80,7 +102,13 @@ export default function ResetPasswordPage() {
       });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(
+        error.code === "same_password"
+          ? "Choose a password different from your current one."
+          : error.code === "weak_password"
+          ? "That password is too weak. Try a longer one."
+          : "Unable to update your password. Please request a new reset link."
+      );
       setSaving(false);
       return;
     }

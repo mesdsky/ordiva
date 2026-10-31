@@ -363,7 +363,7 @@ export default function BudgetPage() {
     if (hasReachedBudgetLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -387,9 +387,12 @@ export default function BudgetPage() {
   ) {
     event.preventDefault();
 
+    // Until the rate loads, amounts would be saved as IDR.
+    if (currencyLoading) return;
+
     if (hasReachedBudgetLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -486,7 +489,7 @@ export default function BudgetPage() {
         )
       ) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+          "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
         );
       } else if (error.code === "23505") {
         setErrorMessage(
@@ -540,18 +543,26 @@ export default function BudgetPage() {
 
     const supabase = createClient();
 
-    const { error } = await supabase
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setDeleting(null);
+      router.push("/login");
+      return;
+    }
+
+    // A delete that matches no row returns no error; check it removed one.
+    const { data: deleted, error } = await supabase
       .from("budgets")
       .delete()
       .eq("id", budgetToDelete.id)
-      .eq(
-        "user_id",
-        (await supabase.auth.getUser()).data.user?.id ??
-          ""
-      );
+      .eq("user_id", user.id)
+      .select("id");
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (error || !deleted || deleted.length === 0) {
+      setErrorMessage("Unable to delete the budget. Please try again.");
       setDeleting(null);
       return;
     }
@@ -889,6 +900,7 @@ export default function BudgetPage() {
                       type="submit"
                       disabled={
                         saving ||
+                        currencyLoading ||
                         !categoryId ||
                         availableCategories.length ===
                           0 ||
@@ -1186,7 +1198,7 @@ export default function BudgetPage() {
         description={
           budgetToDelete
             ? budgetToDelete.is_recurring
-              ? `"${budgetToDelete.name}" will stop applying to future months. This action cannot be undone.`
+              ? `"${budgetToDelete.name}" will be removed from every month it applied to, including past months. This action cannot be undone.`
               : `You are about to delete "${budgetToDelete.name}". This action cannot be undone.`
             : "This budget will be permanently deleted."
         }

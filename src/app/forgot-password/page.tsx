@@ -39,7 +39,12 @@ export default function ForgotPasswordPage() {
       );
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(
+        error.code === "over_email_send_rate_limit" ||
+          error.code === "over_request_rate_limit"
+          ? "Too many requests. Please wait a few minutes and try again."
+          : "Unable to send the reset link. Please try again."
+      );
       setLoading(false);
       return;
     }

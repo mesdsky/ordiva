@@ -11,6 +11,7 @@ import { featureIcons } from "@/components/landing/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { todayLocal } from "@/lib/date";
+import { fractionDigits } from "@/lib/currency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
@@ -60,6 +61,10 @@ export default function TransactionsPage() {
 
   const [categoryId, setCategoryId] = useState("");
   const [amount, setAmount] = useState("");
+  // The stored IDR amount behind a pre-filled edit, so saving without
+  // touching the amount doesn't re-convert a rounded display value.
+  const [editingOriginal, setEditingOriginal] =
+    useState<{ input: string; idr: number } | null>(null);
   const [description, setDescription] = useState("");
 
   const [transactionDate, setTransactionDate] = useState(
@@ -99,6 +104,7 @@ export default function TransactionsPage() {
           .select(
             "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
           )
+          .eq("user_id", user.id)
           .order("transaction_date", {
             ascending: false,
           })
@@ -150,6 +156,7 @@ export default function TransactionsPage() {
 
   function resetForm() {
     setEditingId(null);
+    setEditingOriginal(null);
     setType("expense");
     setCategoryId("");
     setAmount("");
@@ -185,7 +192,14 @@ export default function TransactionsPage() {
         ? Number(transaction.amount)
         : Number(transaction.amount) * rate;
 
-    setAmount(String(displayAmount));
+    // Round to what the currency shows; a raw 3.0649 fails the
+    // input's step validation and blocks saving.
+    const amountInput = displayAmount.toFixed(fractionDigits(currency));
+    setAmount(amountInput);
+    setEditingOriginal({
+      input: amountInput,
+      idr: Number(transaction.amount),
+    });
 
     setDescription(transaction.description);
     setTransactionDate(transaction.transaction_date);
@@ -249,14 +263,20 @@ export default function TransactionsPage() {
       return;
     }
 
-    if (!categoryId) {
+    // Switching type while editing keeps the old category in state.
+    if (
+      !categoryId ||
+      categories.find((c) => c.id === categoryId)?.type !== type
+    ) {
       setMessage("Please select a category.");
       setSaving(false);
       return;
     }
 
     const numericAmount =
-      currency === "IDR"
+      editingId && editingOriginal?.input === amount
+        ? editingOriginal.idr
+        : currency === "IDR"
         ? displayAmount
         : displayAmount / rate;
 
@@ -533,6 +553,8 @@ export default function TransactionsPage() {
                       { value: "income", label: "Income" },
                     ]}
                     onChange={(value) => {
+                      // Categories are per type; keep none of the old one.
+                      if (value !== type) setCategoryId("");
                       setType(value as "income" | "expense");
                       markFormDirty();
                     }}

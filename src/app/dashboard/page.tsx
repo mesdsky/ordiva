@@ -460,6 +460,17 @@ export default function DashboardPage() {
       const nextMonthStart =
         `${nextMonthYear}-${nextMonth}-01`;
 
+      // The summary, comparisons and 6-month chart never look further
+      // back, so don't download the whole history.
+      const sixMonthsDate = new Date(
+        currentYear,
+        today.getMonth() - 5,
+        1
+      );
+      const sixMonthsStart = `${sixMonthsDate.getFullYear()}-${String(
+        sixMonthsDate.getMonth() + 1
+      ).padStart(2, "0")}-01`;
+
       const [
         profileResult,
         transactionsResult,
@@ -482,7 +493,9 @@ export default function DashboardPage() {
           .select(
             "id, type, amount, category_id, transaction_date"
           )
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .gte("transaction_date", sixMonthsStart)
+          .lt("transaction_date", nextMonthStart),
 
         supabase
           .from("transactions")

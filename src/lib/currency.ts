@@ -73,3 +73,16 @@ export function formatCurrency(
       currency === "IDR" || currency === "JPY" ? 0 : 2,
   }).format(amount);
 }
+export function fractionDigits(currency: SupportedCurrency) {
+  return currency === "IDR" || currency === "JPY" ? 0 : 2;
+}
+
+// Half of the smallest displayed unit, in IDR. A converted amount within
+// this of a target is the same number on screen, so treat it as equal.
+export function displayTolerance(
+  currency: SupportedCurrency,
+  rate: number
+) {
+  if (currency === "IDR" || !(rate > 0)) return 0.5;
+  return 0.5 / 10 ** fractionDigits(currency) / rate;
+}

@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import PageHero, { heroButton } from "@/components/app/PageHero";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
+import { displayTolerance, fractionDigits } from "@/lib/currency";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 
 type Goal = {
@@ -27,6 +28,8 @@ export default function GoalsPage() {
     format: formatCurrency,
     loading: currencyLoading,
   } = useCurrency();
+  // Whole units for IDR/JPY, cents for the others.
+  const amountStep = fractionDigits(currency) === 0 ? "1" : "0.01";
 
   const { setDirty } = useUnsavedChanges();
 
@@ -164,7 +167,7 @@ export default function GoalsPage() {
     if (hasReachedGoalLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -186,9 +189,12 @@ export default function GoalsPage() {
   async function handleCreateGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    // Until the rate loads, amounts would be saved as IDR.
+    if (currencyLoading) return;
+
     if (hasReachedGoalLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -266,7 +272,7 @@ export default function GoalsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+          "You've reached your Free plan limit. Free users can create up to 3 goals."
         );
       } else {
         setErrorMessage(error.message);
@@ -331,9 +337,18 @@ export default function GoalsPage() {
     }
 
     let newCurrentAmount: number;
+    // Converted amounts land a fraction of a rupiah off; within half a
+    // displayed unit, snap to the target or to zero.
+    const tolerance = displayTolerance(currency, rate);
 
     if (isAdding) {
       newCurrentAmount = goal.current_amount + numericSavings;
+
+      if (
+        Math.abs(newCurrentAmount - goal.target_amount) <= tolerance
+      ) {
+        newCurrentAmount = goal.target_amount;
+      }
 
       if (newCurrentAmount > goal.target_amount) {
         setErrorMessage(
@@ -347,6 +362,10 @@ export default function GoalsPage() {
       }
     } else {
       newCurrentAmount = goal.current_amount - numericSavings;
+
+      if (Math.abs(newCurrentAmount) <= tolerance) {
+        newCurrentAmount = 0;
+      }
 
       if (newCurrentAmount < 0) {
         setErrorMessage(
@@ -604,8 +623,8 @@ export default function GoalsPage() {
                   <input
                     id="goal-target"
                     type="number"
-                    min="1"
-                    step="1"
+                    min={amountStep}
+                    step={amountStep}
                     value={targetAmount}
                     onChange={(event) => {
                       setTargetAmount(event.target.value);
@@ -629,7 +648,7 @@ export default function GoalsPage() {
                     id="goal-current"
                     type="number"
                     min="0"
-                    step="1"
+                    step={amountStep}
                     value={currentAmount}
                     onChange={(event) => {
                       setCurrentAmount(event.target.value);
@@ -692,6 +711,7 @@ export default function GoalsPage() {
                     type="submit"
                     disabled={
                       saving ||
+                      currencyLoading ||
                       (currency !== "IDR" &&
                         (!Number.isFinite(rate) || rate <= 0))
                     }
@@ -917,8 +937,8 @@ export default function GoalsPage() {
                             <input
                               id={`savings-${goal.id}`}
                               type="number"
-                              min="1"
-                              step="1"
+                              min={amountStep}
+                              step={amountStep}
                               value={savingsAmount}
                               onChange={(event) => {
                                 setSavingsAmount(event.target.value);
