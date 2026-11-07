@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import Navigation from "@/components/Navigation";
 import { useCurrency } from "@/hooks/useCurrency";
 import {
@@ -477,12 +478,16 @@ export default function DashboardPage() {
           .eq("id", user.id)
           .single(),
 
-        supabase
-          .from("transactions")
-          .select(
-            "id, type, amount, category_id, transaction_date"
-          )
-          .eq("user_id", user.id),
+        fetchAllRows((from, to) =>
+          supabase
+            .from("transactions")
+            .select(
+              "id, type, amount, category_id, transaction_date"
+            )
+            .eq("user_id", user.id)
+            .order("id", { ascending: true })
+            .range(from, to)
+        ),
 
         supabase
           .from("transactions")

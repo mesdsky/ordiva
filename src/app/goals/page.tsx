@@ -164,7 +164,7 @@ export default function GoalsPage() {
     if (hasReachedGoalLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -188,7 +188,7 @@ export default function GoalsPage() {
 
     if (hasReachedGoalLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+        "You've reached your Free plan limit. Free users can create up to 3 goals."
       );
       return;
     }
@@ -266,7 +266,7 @@ export default function GoalsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can create up to 3 goals."
+          "You've reached your Free plan limit. Free users can create up to 3 goals."
         );
       } else {
         setErrorMessage(error.message);

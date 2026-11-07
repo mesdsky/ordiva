@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import Navigation from "@/components/Navigation";
 import PageHero, { HeroStat, heroButton } from "@/components/app/PageHero";
 import PageLoader from "@/components/app/PageLoader";
@@ -94,17 +95,21 @@ export default function TransactionsPage() {
         transactionsResult,
         categoriesResult,
       ] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select(
-            "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
-          )
-          .order("transaction_date", {
-            ascending: false,
-          })
-          .order("created_at", {
-            ascending: false,
-          }),
+        fetchAllRows((from, to) =>
+          supabase
+            .from("transactions")
+            .select(
+              "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
+            )
+            .order("transaction_date", {
+              ascending: false,
+            })
+            .order("created_at", {
+              ascending: false,
+            })
+            .order("id", { ascending: true })
+            .range(from, to)
+        ),
 
         supabase
           .from("categories")

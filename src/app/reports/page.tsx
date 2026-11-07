@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/fetch-all";
 import Navigation from "@/components/Navigation";
 import { useCurrency } from "@/hooks/useCurrency";
 import {
@@ -136,17 +137,21 @@ export default function ReportsPage() {
     const {
       data: transactionData,
       error: transactionError,
-    } = await supabase
-      .from("transactions")
-      .select(
-        "id, type, amount, description, transaction_date, category_id"
-      )
-      .eq("user_id", user.id)
-      .gte("transaction_date", transactionStartDate)
-      .lt("transaction_date", nextMonthStart)
-      .order("transaction_date", {
-        ascending: true,
-      });
+    } = await fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select(
+          "id, type, amount, description, transaction_date, category_id"
+        )
+        .eq("user_id", user.id)
+        .gte("transaction_date", transactionStartDate)
+        .lt("transaction_date", nextMonthStart)
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("id", { ascending: true })
+        .range(from, to)
+    );
 
     if (transactionError) {
       setErrorMessage(transactionError.message);

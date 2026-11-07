@@ -363,7 +363,7 @@ export default function BudgetPage() {
     if (hasReachedBudgetLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -389,7 +389,7 @@ export default function BudgetPage() {
 
     if (hasReachedBudgetLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+        "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
       );
       return;
     }
@@ -486,7 +486,7 @@ export default function BudgetPage() {
         )
       ) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active budgets per month."
+          "You've reached your Free plan limit. Free users can have up to 5 active budgets per month."
         );
       } else if (error.code === "23505") {
         setErrorMessage(

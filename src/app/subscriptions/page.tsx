@@ -284,7 +284,7 @@ export default function SubscriptionsPage() {
     if (hasReachedSubscriptionLimit) {
       setMessage("");
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -310,7 +310,7 @@ export default function SubscriptionsPage() {
 
     if (hasReachedSubscriptionLimit) {
       setErrorMessage(
-        "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+        "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
       );
       return;
     }
@@ -394,7 +394,7 @@ export default function SubscriptionsPage() {
     if (error) {
       if (error.message.includes("Free plan limit reached")) {
         setErrorMessage(
-          "You&apos;ve reached your Free plan limit. Free users can have up to 5 active subscriptions."
+          "You've reached your Free plan limit. Free users can have up to 5 active subscriptions."
         );
       } else {
         setErrorMessage(error.message);
