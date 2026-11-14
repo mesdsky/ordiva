@@ -460,6 +460,19 @@ export default function DashboardPage() {
       const nextMonthStart =
         `${nextMonthYear}-${nextMonth}-01`;
 
+      // The trend chart covers the last 6 months; only load that window.
+      // Loading full history was slow and, past Supabase's 1000-row
+      // response cap, silently dropped rows from the totals.
+      const trendStartDate = new Date(
+        currentYear,
+        today.getMonth() - 5,
+        1
+      );
+
+      const trendStart = `${trendStartDate.getFullYear()}-${String(
+        trendStartDate.getMonth() + 1
+      ).padStart(2, "0")}-01`;
+
       const [
         profileResult,
         transactionsResult,
@@ -482,7 +495,9 @@ export default function DashboardPage() {
           .select(
             "id, type, amount, category_id, transaction_date"
           )
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .gte("transaction_date", trendStart)
+          .lt("transaction_date", nextMonthStart),
 
         supabase
           .from("transactions")

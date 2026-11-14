@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -51,9 +52,12 @@ export default function RegisterPage() {
           {/* Logo */}
           <div className="mb-10 text-center">
             <Link href="/">
-              <img
+              <Image
                 src="/ordiva-navbar.png"
                 alt="Ordiva"
+                width={144}
+                height={48}
+                priority
                 className="mx-auto h-12 w-auto object-contain"
               />
             </Link>

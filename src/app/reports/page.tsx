@@ -23,6 +23,7 @@ import {
   PremiumModal,
 } from "@/components/Premium";
 import { isPremium as checkPremium } from "@/lib/premium";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 type TransactionType = "income" | "expense";
 type Plan = "free" | "premium";
@@ -136,17 +137,21 @@ export default function ReportsPage() {
     const {
       data: transactionData,
       error: transactionError,
-    } = await supabase
-      .from("transactions")
-      .select(
-        "id, type, amount, description, transaction_date, category_id"
-      )
-      .eq("user_id", user.id)
-      .gte("transaction_date", transactionStartDate)
-      .lt("transaction_date", nextMonthStart)
-      .order("transaction_date", {
-        ascending: true,
-      });
+    } = await fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select(
+          "id, type, amount, description, transaction_date, category_id"
+        )
+        .eq("user_id", user.id)
+        .gte("transaction_date", transactionStartDate)
+        .lt("transaction_date", nextMonthStart)
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("id", { ascending: true })
+        .range(from, to)
+    );
 
     if (transactionError) {
       setErrorMessage(transactionError.message);

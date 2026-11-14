@@ -11,6 +11,7 @@ import { featureIcons } from "@/components/landing/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useCurrency } from "@/hooks/useCurrency";
 import { todayLocal } from "@/lib/date";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { useUnsavedChanges } from "@/components/UnsavedChangesProvider";
 import CategoryCreateModal, { CreatedCategory } from "@/components/CategoryCreateModal";
 
@@ -94,17 +95,21 @@ export default function TransactionsPage() {
         transactionsResult,
         categoriesResult,
       ] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select(
-            "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
-          )
-          .order("transaction_date", {
-            ascending: false,
-          })
-          .order("created_at", {
-            ascending: false,
-          }),
+        fetchAllRows((from, to) =>
+          supabase
+            .from("transactions")
+            .select(
+              "id, type, amount, description, transaction_date, payment_method, need_want, notes, category_id"
+            )
+            .order("transaction_date", {
+              ascending: false,
+            })
+            .order("created_at", {
+              ascending: false,
+            })
+            .order("id", { ascending: false })
+            .range(from, to)
+        ),
 
         supabase
           .from("categories")

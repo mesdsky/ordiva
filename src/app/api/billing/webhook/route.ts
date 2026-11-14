@@ -153,13 +153,31 @@ export async function POST(request: Request) {
 
     if (paid) {
       const now = new Date();
+
+      // Renewing before the current period ends must extend it, not
+      // restart from today and throw away the days already paid for.
+      // Skip this order's own row so a webhook retry doesn't stack twice.
+      const { data: latest, error: latestError } = await supabase
+        .from("billing_entitlements")
+        .select("ends_at")
+        .eq("user_id", order.user_id)
+        .eq("status", "active")
+        .neq("order_id", order.id)
+        .not("ends_at", "is", null)
+        .gt("ends_at", now.toISOString())
+        .order("ends_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) throw latestError;
+
+      const periodStart = latest?.ends_at ? new Date(latest.ends_at) : now;
       const endsAt =
         order.plan_id === "monthly"
-          ? addMonths(now, 1)
+          ? addMonths(periodStart, 1)
           : order.plan_id === "three-months"
-          ? addMonths(now, 3)
+          ? addMonths(periodStart, 3)
           : order.plan_id === "yearly"
-          ? addMonths(now, 12)
+          ? addMonths(periodStart, 12)
           : null;
 
       const { error: entitlementError } = await supabase.from("billing_entitlements").upsert(
@@ -168,7 +186,7 @@ export async function POST(request: Request) {
           order_id: order.id,
           plan_id: order.plan_id,
           status: "active",
-          starts_at: now.toISOString(),
+          starts_at: periodStart.toISOString(),
           ends_at: endsAt,
           // One-time plans must not create a recurring subscription record.
           provider_subscription_id: null,

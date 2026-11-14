@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -281,9 +282,12 @@ export default function OnboardingPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#F5F2E8] text-[#173C34]">
         <div className="text-center">
-          <img
+          <Image
             src="/ordiva-navbar.png"
             alt="Ordiva"
+            width={132}
+            height={44}
+            priority
             className="mx-auto h-11 w-auto object-contain"
           />
 
@@ -303,9 +307,12 @@ export default function OnboardingPage() {
               HEADER
           ===================================================== */}
           <div className="mb-8 text-center sm:mb-10">
-            <img
+            <Image
               src="/ordiva-navbar.png"
               alt="Ordiva"
+              width={132}
+              height={44}
+              priority
               className="mx-auto h-11 w-auto object-contain"
             />
 
